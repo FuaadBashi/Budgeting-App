@@ -12,7 +12,20 @@ import { formatMinor, formatSignedMinor } from "@/lib/money";
 
 function shortDate(iso: string): string {
   const [y, m, d] = iso.split("-");
-  const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  const months = [
+    "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dec",
+  ];
   return `${Number(d)} ${months[Number(m) - 1]} ${y.slice(2)}`;
 }
 
@@ -54,7 +67,10 @@ export function MatchReview({
   transactions: Record<string, Transaction>;
 }) {
   const router = useRouter();
-  const [busy, setBusy] = useState<string | null>(null);
+  const [busy, setBusy] = useState<{
+    instanceId: string;
+    action: "confirm" | "unmatch";
+  } | null>(null);
   const [resolved, setResolved] = useState<Set<string>>(new Set());
   const [error, setError] = useState<string | null>(null);
 
@@ -67,7 +83,10 @@ export function MatchReview({
 
   async function onResolve(instance: ObligationInstance, accept: boolean) {
     setError(null);
-    setBusy(instance.id);
+    setBusy({
+      instanceId: instance.id,
+      action: accept ? "confirm" : "unmatch",
+    });
     try {
       if (accept) {
         await confirmObligationMatch(instance.id);
@@ -92,7 +111,7 @@ export function MatchReview({
         <h2 className="section-label">Matches to review</h2>
         {pending.length > 0 && (
           <span className="text-xs tnum" style={{ color: "var(--text-muted)" }}>
-            {pending.length} waiting
+            {pending.length} {pending.length === 1 ? "match" : "matches"} waiting
           </span>
         )}
       </div>
@@ -188,33 +207,41 @@ export function MatchReview({
                   </p>
                 )}
 
-                <div className="flex flex-wrap justify-end gap-2">
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                   <button
                     type="button"
-                    disabled={busy === instance.id}
+                    disabled={busy?.instanceId === instance.id}
                     onClick={() => onResolve(instance, false)}
-                    className="rounded-full px-4 py-2 text-sm font-medium"
+                    className="w-full rounded-full px-4 py-2 text-sm font-medium"
                     style={{
                       color: "var(--status-critical)",
                       boxShadow: "inset 0 0 0 1px var(--hairline-strong)",
-                      opacity: busy === instance.id ? 0.6 : 1,
+                      opacity: busy?.instanceId === instance.id ? 0.6 : 1,
                     }}
                   >
-                    Not this payment
+                    {busy?.instanceId === instance.id && busy.action === "unmatch"
+                      ? "Removing…"
+                      : "Not this payment"}
                   </button>
                   <button
                     type="button"
-                    disabled={busy === instance.id || !txn || txn.status === "voided"}
+                    disabled={
+                      busy?.instanceId === instance.id || !txn || txn.status === "voided"
+                    }
                     onClick={() => onResolve(instance, true)}
-                    className="rounded-full px-4 py-2 text-sm font-medium"
+                    className="w-full rounded-full px-4 py-2 text-sm font-medium"
                     style={{
                       background: "var(--accent)",
                       color: "#fff",
                       opacity:
-                        busy === instance.id || !txn || txn.status === "voided" ? 0.6 : 1,
+                        busy?.instanceId === instance.id || !txn || txn.status === "voided"
+                          ? 0.6
+                          : 1,
                     }}
                   >
-                    {busy === instance.id ? "Confirming…" : "Yes, this paid it"}
+                    {busy?.instanceId === instance.id && busy.action === "confirm"
+                      ? "Confirming…"
+                      : "Yes, this paid it"}
                   </button>
                 </div>
               </li>
