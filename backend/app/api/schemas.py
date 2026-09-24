@@ -76,6 +76,17 @@ class AccountEditIn(BaseModel):
     default_category_id: uuid.UUID | None = None
 
 
+class CategoryIn(BaseModel):
+    """A new category. Categories are never deleted, so the create is strict:
+    a typo made here lives in every picker for ever."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    name: str = Field(min_length=1, max_length=120)
+    parent_id: uuid.UUID | None = None
+    nature: CategoryNature = CategoryNature.DISCRETIONARY
+
+
 class CategoryOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 

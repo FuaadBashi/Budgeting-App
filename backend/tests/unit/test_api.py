@@ -36,6 +36,68 @@ def test_create_and_list_account(client):
     assert [a["name"] for a in listed] == ["Current"]
 
 
+def test_a_ledger_counterparty_cannot_have_an_opening_balance(client):
+    """No figure reads an expense or income-source account's balance, so the
+    value would be stored and then silently affect nothing."""
+    r = client.post(
+        "/api/accounts",
+        json={"name": "Groceries", "kind": "expense", "opening_balance_minor": 5_000},
+    )
+    assert r.status_code == 422
+    assert "opening balance" in r.json()["detail"]
+    assert client.get("/api/accounts").json() == []
+
+
+def test_a_category_can_be_created(client):
+    r = client.post("/api/categories", json={"name": " Groceries ", "nature": "essential"})
+    assert r.status_code == 201, r.text
+    assert r.json()["name"] == "Groceries"
+    assert r.json()["nature"] == "essential"
+    assert r.json()["parent_id"] is None
+    assert [c["name"] for c in client.get("/api/categories").json()] == ["Groceries"]
+
+
+def test_a_category_defaults_to_discretionary(client):
+    """The model's own default, so an unspecified nature means what it means
+    everywhere else -- counted by the null-scope discretionary budget."""
+    assert client.post("/api/categories", json={"name": "Coffee"}).json()["nature"] == "discretionary"
+
+
+def test_a_subcategory_needs_a_parent_that_exists(client):
+    r = client.post(
+        "/api/categories",
+        json={"name": "Takeaway", "parent_id": "00000000-0000-4000-8000-000000000000"},
+    )
+    assert r.status_code == 422
+    assert "unknown parent" in r.json()["detail"]
+
+
+def test_a_sibling_with_the_same_name_is_refused(client):
+    """Categories are never deleted, so a double-submit would leave two
+    identical-looking Groceries splitting one budget's spending for ever."""
+    assert client.post("/api/categories", json={"name": "Groceries"}).status_code == 201
+    r = client.post("/api/categories", json={"name": "groceries"})
+    assert r.status_code == 422
+    assert "already" in r.json()["detail"]
+
+
+def test_the_same_name_under_a_different_parent_is_allowed(client):
+    food = client.post("/api/categories", json={"name": "Food"}).json()
+    work = client.post("/api/categories", json={"name": "Work"}).json()
+    for parent in (food, work):
+        r = client.post("/api/categories", json={"name": "Lunch", "parent_id": parent["id"]})
+        assert r.status_code == 201, r.text
+
+
+def test_a_blank_category_name_is_refused(client):
+    assert client.post("/api/categories", json={"name": "   "}).status_code == 422
+
+
+def test_an_unknown_category_field_is_refused_not_dropped(client):
+    r = client.post("/api/categories", json={"name": "Rent", "budget_minor": 60_000})
+    assert r.status_code == 422
+
+
 def test_list_categories_for_transaction_entry(client, categories):
     listed = client.get("/api/categories")
 

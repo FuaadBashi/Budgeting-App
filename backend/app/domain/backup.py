@@ -135,6 +135,12 @@ def build_payload(session: Session) -> dict:
     B-C: application tables only. Nothing from configuration or `.env` appears
     here, because a backup ends up in places the database never does.
     """
+    # Every list below ends its ORDER BY on the primary key. Sorting on a column
+    # that can repeat -- a booking date, a name -- hands ties back in physical
+    # row order, and an edit moves a row, so two exports of the same data came
+    # out in different orders and B-A (one serialisation) failed whenever an
+    # earlier write had shuffled the heap.
+    #
     # Every column an account actually carries. The three optional ones are here
     # because a restore that silently dropped them would lose settings without
     # moving a balance -- so X17 would still pass while the file stopped being a
@@ -156,7 +162,7 @@ def build_payload(session: Session) -> dict:
                 str(a.minimum_payment) if a.minimum_payment is not None else None
             ),
         }
-        for a in session.scalars(select(Account).order_by(Account.name))
+        for a in session.scalars(select(Account).order_by(Account.name, Account.id))
     ]
     categories = [
         {
@@ -165,10 +171,12 @@ def build_payload(session: Session) -> dict:
             "parent_id": str(c.parent_id) if c.parent_id else None,
             "nature": c.nature.value,
         }
-        for c in session.scalars(select(Category).order_by(Category.name))
+        for c in session.scalars(select(Category).order_by(Category.name, Category.id))
     ]
     transactions = []
-    for txn in session.scalars(select(Transaction).order_by(Transaction.booking_date)):
+    for txn in session.scalars(
+        select(Transaction).order_by(Transaction.booking_date, Transaction.id)
+    ):
         transactions.append(
             {
                 "id": str(txn.id),
@@ -188,7 +196,8 @@ def build_payload(session: Session) -> dict:
                         "amount": str(p.amount),
                         "currency": p.currency,
                     }
-                    for p in txn.postings
+                    # The relationship itself is unordered.
+                    for p in sorted(txn.postings, key=lambda p: p.id)
                 ],
             }
         )

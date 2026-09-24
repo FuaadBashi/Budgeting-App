@@ -21,6 +21,7 @@ from app.api.schemas import (
     AccountIn,
     BudgetImpactOut,
     AccountOut,
+    CategoryIn,
     CategoryOut,
     NetWorthOut,
     PostingOut,
@@ -46,7 +47,7 @@ from app.models import (
     Transaction,
     TransactionStatus,
 )
-from app.models.enums import LIQUID_KINDS, AccountKind
+from app.models.enums import LIQUID_KINDS, NOMINAL_KINDS, AccountKind
 
 router = APIRouter()
 
@@ -107,6 +108,17 @@ def create_account(
     payload: AccountIn, session: Session = Depends(get_session)
 ) -> AccountOut:
     _validate_default_category(session, payload.kind, payload.default_category_id)
+    # Nominal accounts exist so every transaction balances; no balance or net
+    # worth figure reads theirs. An opening balance here would be stored and
+    # then affect nothing -- accepted and ignored.
+    if payload.kind in NOMINAL_KINDS and payload.opening_balance_minor != 0:
+        raise HTTPException(
+            status_code=422,
+            detail=(
+                f"a {payload.kind.value} account is a ledger counterparty, not a "
+                "place money is held, so it cannot have an opening balance"
+            ),
+        )
     account = Account(
         name=payload.name,
         kind=payload.kind,
@@ -184,7 +196,45 @@ def reconcile_account(
 @router.get("/categories", response_model=list[CategoryOut])
 def list_categories(session: Session = Depends(get_session)) -> list[Category]:
     """Expose category ids for transaction entry without exposing derived totals."""
-    return list(session.scalars(select(Category).order_by(Category.name)))
+    return list(session.scalars(select(Category).order_by(Category.name, Category.id)))
+
+
+@router.post("/categories", response_model=CategoryOut, status_code=201)
+def create_category(
+    payload: CategoryIn, session: Session = Depends(get_session)
+) -> Category:
+    """Add a category. Until this existed a fresh install had none and no way to
+    make one, so every transaction was uncategorised and every scoped budget
+    measured nothing.
+
+    A sibling with the same name is refused, case-insensitively: categories are
+    never deleted, and a double-submitted "Groceries" would split one budget's
+    spending across two categories that look identical in every picker.
+    """
+    name = payload.name.strip()
+    if not name:
+        raise HTTPException(status_code=422, detail="a category needs a name")
+    if payload.parent_id is not None and session.get(Category, payload.parent_id) is None:
+        raise HTTPException(status_code=422, detail=f"unknown parent category {payload.parent_id}")
+
+    same_parent = (
+        Category.parent_id.is_(None)
+        if payload.parent_id is None
+        else Category.parent_id == payload.parent_id
+    )
+    existing = session.scalar(
+        select(Category).where(same_parent, func.lower(Category.name) == name.lower())
+    )
+    if existing is not None:
+        raise HTTPException(
+            status_code=422,
+            detail=f"there is already a category called {existing.name!r} here",
+        )
+
+    category = Category(name=name, parent_id=payload.parent_id, nature=payload.nature)
+    session.add(category)
+    session.commit()
+    return category
 
 
 # --------------------------------------------------------------------------
@@ -332,8 +382,13 @@ def list_transactions(
         if max_amount_minor is not None:
             query = query.where(liquid_effect <= from_minor(max_amount_minor))
     rows = session.scalars(
+        # id last: created_at is now() for the whole database transaction, so a
+        # batch ties on both keys, and offset paging over tied rows repeated some
+        # and skipped others.
         query.order_by(
-            Transaction.booking_date.desc(), Transaction.created_at.desc()
+            Transaction.booking_date.desc(),
+            Transaction.created_at.desc(),
+            Transaction.id.desc(),
         )
         .offset(max(0, offset))
         .limit(min(200, max(1, limit)))
