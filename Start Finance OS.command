@@ -83,6 +83,7 @@ say "Starting the app…"
 WEB_PID=$!
 
 # Wait for both real answers rather than sleeping a guessed number of seconds.
+say "Waiting for the API and app to answer (up to 60 seconds)…"
 API_READY=0
 WEB_READY=0
 for _ in $(seq 1 60); do

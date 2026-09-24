@@ -21,7 +21,15 @@ from app.db import get_session
 from app.domain import backup, restore as restore_module
 from app.domain.disposable import account_balances, net_worth
 from app.main import app
-from app.models import Base, FutureObligation, ObligationInstance, Posting, Transaction
+from app.models import (
+    Base,
+    BankConnection,
+    BankConnectionStatus,
+    FutureObligation,
+    ObligationInstance,
+    Posting,
+    Transaction,
+)
 from tests.conftest import post
 
 NOW = datetime(2026, 8, 31, 14, 25, 30, tzinfo=timezone.utc)
@@ -167,6 +175,37 @@ def test_a_backup_contains_no_secrets(session, ledger, tmp_path, monkeypatch):
         "format", "version", "exported_for", "accounts", "categories",
         "transactions", "tables",
     }
+
+
+def test_bank_consent_credentials_are_redacted_and_restore_as_revoked(
+    session, ledger
+):
+    """B-C includes provider sessions and one-use redirect state."""
+    connection = BankConnection(
+        provider="enable_banking",
+        aspsp_name="Monzo",
+        aspsp_country="GB",
+        status=BankConnectionStatus.ACTIVE,
+        state="one-use-state",
+        session_id="provider-session-secret",
+        valid_until=NOW + timedelta(days=30),
+    )
+    session.add(connection)
+    session.commit()
+
+    payload = backup.build_payload(session)
+    encoded = payload["tables"]["bank_connections"][0]
+    assert encoded["status"] == "REVOKED"
+    assert encoded["state"] is None
+    assert encoded["session_id"] is None
+    assert "provider-session-secret" not in json.dumps(payload)
+    assert "one-use-state" not in json.dumps(payload)
+
+    restore_module.restore(session, payload, replace=True)
+    session.expunge_all()
+    restored = session.scalars(select(BankConnection)).one()
+    assert restored.status == BankConnectionStatus.REVOKED
+    assert restored.session_id is None
 
 
 # --------------------------------------------------------------------------

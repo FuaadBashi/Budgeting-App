@@ -100,8 +100,9 @@ export function MonthPlanView({
 
         {plan.income_planned_minor === 0 && (
           <p className="mt-4 text-sm" style={{ color: "var(--status-warning)" }}>
-            ▲ No income is expected this month, so there is nothing to assign yet. Add what you
-            are paid below.
+            ▲ No expected income is configured for this month. Add an income source below.
+            Money already received is shown for comparison; this forward plan is built from
+            expected income.
           </p>
         )}
         {plan.unassigned_minor === 0 && plan.income_planned_minor > 0 && (

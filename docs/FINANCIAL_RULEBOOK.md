@@ -3,7 +3,7 @@
 The normative definitions for this system. Every dashboard number must be derivable from
 these rules. Where code and rulebook disagree, the rulebook is the defect report.
 
-Status: v1 — covers Phases 0–4 (ledger, dashboard, budgets, goals/obligations).
+Status: v1 — normative money, ledger, planning, import and simulation rules.
 
 ---
 
@@ -329,6 +329,15 @@ rebuildable from canonical records and must never be independently editable.
 
 **Invariant P1:** running any scenario leaves all ledger tables byte-identical.
 
+Imported statement, receipt and bank-feed rows enter the candidate inbox. They do not become
+postings until explicitly accepted. Bank-feed identity belongs to the stable provider account
+link, not to the mutable ledger account it currently maps to; remapping a link must not restage a
+row already reviewed.
+
+Portable backups retain bank/link history but never live consent material. Provider session IDs
+and one-use redirect state are omitted, and every restored connection is revoked so reconnecting
+is an explicit act.
+
 ---
 
 ## 12. Test contract
@@ -342,8 +351,9 @@ Every invariant above is a named test. The complete set:
 position denies · `G1` attribution never exceeds its savings balance · `G2` goal conflict is
 surfaced explicitly
 
-`R1` (cache rebuild is a no-op) holds trivially — nothing is cached — and will need a real test
-when caching arrives. `P1` (simulation never mutates actuals) awaits Phase 8.
+`R1` (cache rebuild is a no-op) holds for every user-visible money figure; assisted merchant
+suggestions are advisory and never a source of figures. `P1` is enforced by the simulation tests,
+which compare balances, net worth and transaction count before and after run/fetch/compare.
 
 Golden fixtures (§15.5 of the plan) live in `backend/tests/fixtures/golden/` as version-controlled
 YAML — hand-calculated months where every balance, budget, goal and projection is known. They are

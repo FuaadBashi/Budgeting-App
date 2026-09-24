@@ -83,6 +83,10 @@ export function AppShell({ children }: { children: ReactNode }) {
           <span className="font-display text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
             Personal Finance OS
           </span>
+          <div className="flex items-center gap-2">
+            <PreferencesPanel placement="header" />
+            <TransactionEntry iconOnly className="!h-11 !w-11 !p-0" />
+          </div>
         </header>
 
         {design === "console" && <CommandBar />}
@@ -98,11 +102,11 @@ export function AppShell({ children }: { children: ReactNode }) {
 
       <MobileNav />
 
-      <TransactionEntry className="fixed bottom-20 right-4 z-20 shadow-lg lg:hidden" />
-      {/* The rail designs carry their own gear inside the rail on desktop. */}
-      <PreferencesPanel
-        className={design === "noir" || design === "console" ? "lg:hidden" : ""}
-      />
+      {/* Rail designs carry their desktop gear inside the rail. Mobile uses the
+          header controls above, so neither gear nor Add covers page content. */}
+      {(design === "field" || design === "raw") && (
+        <PreferencesPanel className="hidden lg:block" />
+      )}
     </div>
   );
 }

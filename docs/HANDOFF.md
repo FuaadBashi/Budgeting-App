@@ -1,6 +1,6 @@
 # Handoff
 
-State of play as at 2 September 2026. Read [FINANCIAL_RULEBOOK.md](FINANCIAL_RULEBOOK.md) first —
+State of play as at 25 September 2026. Read [FINANCIAL_RULEBOOK.md](FINANCIAL_RULEBOOK.md) first —
 it is the contract, and where code disagrees with it that is a defect, not a variation.
 
 ---
@@ -22,7 +22,7 @@ it is the contract, and where code disagrees with it that is a defect, not a var
 | 10 | Polish, backups, hosting | ◐ backups and exposure hardening done; the deploy itself is yours |
 | 11 | Assisted categorisation (LLM) | ✅ |
 
-**Phases 0–9 and 11 complete; Phase 10's backup half is done.** 836 tests. Deployment is the
+**Phases 0–9 and 11 complete; Phase 10's backup half is done.** 920 tests. Deployment is the
 only substantial thing left from the original plan, and `docs/RUNNING.md` already describes the
 setup worth having (Tailscale, real certificates, nothing exposed to the internet) — but see
 "Recommended next task" below, which is not that.
@@ -32,11 +32,16 @@ calendar, goals, simulator, import and data — and every nav item is live. Acco
 budgets, goals and commitments can all be created from the UI; a fresh install lands on a setup
 checklist rather than a dashboard of zeros.
 The Add button records expenses, income, transfers/debt payments and refunds as balanced two-leg
-transactions. The transactions screen
+transactions, including category-split expenses. The transactions screen
 lists history, shows each row's effect on liquid cash, and offers both correction paths: Void
 for a wrong amount or date, edit-in-place for a wrong description, merchant or category. Voided
 rows are hidden by default and never deleted. The list pages through all of history, 100 rows at
 a time.
+
+Accounts now also hosts deterministic categorisation rules and opt-in UK Open Banking through
+Enable Banking. Synced rows are candidates in the existing Import inbox, never direct ledger
+writes. Budgets has a zero-based month-plan view, and Calendar has a month grid alongside the
+existing balance curve.
 
 **A UX audit's ten top findings were worked through on 24 September 2026** (nine fixed, one — adopt a
 single design — left as a decision; see §4). The ones worth knowing: the phone bar is four tabs
@@ -91,6 +96,9 @@ live; routes only translate to and from integer minor units.
 | `domain/classification.py` | Derived transaction type |
 | `domain/simulation.py` | Scenario projection; reads the ledger, writes nothing (P1) |
 | `domain/importing.py` | Statement parsing, duplicate detection, acceptance (M1–M4) |
+| `domain/rules.py` | Ordered deterministic categorisation rules, preview and historical apply |
+| `domain/plan.py` | Zero-based month plan from expected income and budget allocations |
+| `domain/bank_sync.py` | Opt-in bank consent and idempotent sync into the candidate inbox |
 | `domain/explain.py` | Derivation traces; terms sum to the figure (E1) |
 | `domain/insights.py` | Observations, each citing evidence (E2); read-only (E3) |
 | `domain/backup.py` | Atomic backup writes, retention, staleness (B-A/B-B/B-C) |
@@ -119,11 +127,11 @@ where something lives.
 |---|---|
 | `app/page.tsx` | Dashboard — the four KPI tiles, the projected balance curve, budget cards |
 | `app/transactions/page.tsx` | History, void, edit-in-place, Older/Newer paging |
-| `app/accounts/page.tsx` | Accounts by kind with balances, categories, creating both; the setup checklist |
+| `app/accounts/page.tsx` | Accounts, categories, categorisation rules, bank connections; the setup checklist |
 | `app/analytics/page.tsx` | Period and monthly summaries, category bars |
 | `app/insights/page.tsx` | Observations with evidence, including merchant anomalies |
-| `app/budgets/page.tsx` | Budget list/create/edit, account default categories, this period's cards |
-| `app/calendar/page.tsx` | Projected balance curve, day by day |
+| `app/budgets/page.tsx` | Budget list/create/edit, account defaults, period cards and zero-based month plan |
+| `app/calendar/page.tsx` | Projected balance curve and navigable month grid |
 | `app/goals/page.tsx` | Savings goals list/create/edit |
 | `app/simulator/page.tsx` | Scenario list/create/compare, the projection chart |
 | `app/import/page.tsx` | Statement upload, one-by-one candidate triage, receipt photo |
@@ -154,13 +162,17 @@ where something lives.
 | `CategoryBars.tsx` | Spend-by-category ranked bars (Analytics) |
 | `MonthlyBars.tsx` | Month-over-month spend bars (Analytics) |
 | `InsightPanel.tsx` | Renders one `Insight`: title, evidence, action |
-| `TransactionEntry.tsx` | The "Add" modal — expense/income/transfer/refund as balanced two-leg postings; `iconOnly` prop for narrow nav rails |
+| `TransactionEntry.tsx` | The "Add" modal — expense/income/transfer/refund, including balanced category splits; `iconOnly` prop for narrow nav rails |
 | `TransactionList.tsx` | Transaction history table: void, edit-in-place |
 | `InlineEditor.tsx` | Shared edit-in-place form behind budgets/goals/obligations/accounts — one component so the three behave identically |
 | `ImportInbox.tsx` | Statement upload, receipt photo upload, candidate list |
 | `TriageDeck.tsx` | One-by-one accept/reject for import candidates |
 | `DataManager.tsx` | Export buttons (CSV/JSON/XLSX/PDF), backup download, restore with preview |
 | `BackupPanel.tsx` | Backup staleness/status shown on the Data screen |
+| `RuleManager.tsx` | Create, order, preview and apply categorisation rules |
+| `BankManager.tsx` | Connect, map, sync and revoke opt-in bank feeds |
+| `MonthPlanView.tsx` | Assign expected monthly income to budgets, goals and obligations |
+| `MonthGrid.tsx` | Calendar-month overview with selected-day detail |
 | `LoginGate.tsx` | The password form shown when a session is required and missing |
 
 **Lib** (`lib/`):
@@ -223,6 +235,8 @@ calendar, simulation. `BUDGET_ENGINE_SPEC.md` §4 lists ten contradiction points
 | X25 | An automatic obligation match is unambiguous and reversible | ✅ `test_obligation_api.py::test_an_ambiguous_same_amount_pair_is_not_auto_matched`, `::test_unmatching_restores_the_commitment_and_survives_sync` |
 | X26 | Voiding a matched payment reopens the obligation atomically | ✅ `test_obligation_api.py::test_voiding_a_matched_payment_reopens_the_commitment`; migration 0011 repairs old voided links |
 | X27 | Recurring-rule edits change the future, never historical occurrences | ✅ `test_obligation_api.py::test_changing_the_amount_rewrites_only_current_and_future_instances`, `::test_shortening_and_clearing_the_end_date_reshapes_only_the_future_schedule` |
+| X28 | A bank feed remains idempotent when its ledger-account mapping changes | ✅ `test_bank_sync.py::test_remapping_a_link_does_not_restage_a_row` |
+| X29 | Portable backups never carry live bank consent credentials | ✅ `test_backup.py::test_bank_consent_credentials_are_redacted_and_restore_as_revoked` |
 
 ### Assisted categorisation and receipt reading (Phases 7 and 11)
 
@@ -356,11 +370,10 @@ each with named tests.
 7. **The protected cash buffer has no API or UI.** It lives on `UserProfile` and is set in the
    database. The dashboard now says when none is set rather than ticking against £0.00.
 8. **Open from the 24 September audit.** Item 10, adopt one design with light and dark and put the
-   effort into flows, is a decision rather than a fix, and cuts against the motion work above. The
-   audit's product gaps are also open: UK Open Banking sync, a rules engine, split entry in the
-   Add form, a month-grid calendar and a zero-based "assign every pound" view. Only the audit's
-   executive summary reached this repo, so its §2–§5 detail (including the full contrast table)
-   has not been worked through.
+   effort into flows, remains a product decision and cuts against the four-direction motion work
+   above. The concrete product gaps are closed: opt-in UK Open Banking sync, categorisation rules,
+   split entry, a month-grid calendar and a zero-based "assign every pound" view now ship. The
+   eight palettes also have automated AA contrast coverage.
 
 ### Goal integrity coverage
 

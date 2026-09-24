@@ -138,6 +138,11 @@ export function PageTabs({
             key={t.key}
             href={t.href}
             aria-current={active ? "page" : undefined}
+            aria-label={
+              t.count !== undefined && t.count > 0
+                ? `${t.label}, ${t.count}`
+                : undefined
+            }
             className="min-h-9 flex-1 whitespace-nowrap rounded-[var(--radius-sm)] px-3 py-2 text-center text-sm font-medium"
             style={
               active
@@ -147,7 +152,11 @@ export function PageTabs({
           >
             {t.label}
             {t.count !== undefined && t.count > 0 && (
-              <span className="tnum ml-1.5 text-xs" style={{ color: "var(--text-muted)" }}>
+              <span
+                aria-hidden
+                className="tnum ml-1.5 text-xs"
+                style={{ color: "var(--text-muted)" }}
+              >
                 {t.count}
               </span>
             )}
@@ -157,4 +166,3 @@ export function PageTabs({
     </nav>
   );
 }
-

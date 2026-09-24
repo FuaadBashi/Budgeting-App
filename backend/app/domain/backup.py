@@ -82,10 +82,20 @@ def _table_rows(session: Session, name: str) -> list[dict]:
     stmt = select(table)
     if primary:
         stmt = stmt.order_by(*primary)
-    return [
+    rows = [
         {column.name: _json_value(row._mapping[column]) for column in table.columns}
         for row in session.execute(stmt)
     ]
+    if name == "bank_connections":
+        # A portable backup is not a credential store.  The provider session
+        # can authorise account reads when paired with the separately-held app
+        # key, and the pending OAuth state is single-use security material.
+        # Keep the bank/link history, but require a fresh consent after restore.
+        for row in rows:
+            row["status"] = "REVOKED"
+            row["state"] = None
+            row["session_id"] = None
+    return rows
 
 #: `backup-20260831T142530Z.json`. Sorts chronologically as text, which is why
 #: the timestamp is ISO-ordered and not a local format.

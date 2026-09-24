@@ -18,17 +18,16 @@ const SWATCH_VARS = ["--page-plane", "--surface-1", "--accent", "--text-primary"
  * The one control every one of the four designs has to share, since the
  * whole point is comparing them.
  *
- * Two placements. `floating` is a fixed corner button, used on mobile and by
- * the designs whose desktop chrome leaves the bottom-left corner empty. `rail`
- * sits inside the icon rail, because the floating button landed exactly on the
- * rail's Add button: in Vault Noir and Command Ledger the most important action
- * in the app could not be clicked, and hit-testing returned the gear.
+ * Three placements. `floating` is a fixed desktop corner button for designs
+ * whose chrome leaves that corner empty. `rail` sits inside an icon rail.
+ * `header` keeps the mobile control in flow: a floating gear obscured calendar
+ * details and rule actions as the page scrolled beneath it.
  */
 export function PreferencesPanel({
   placement = "floating",
   className = "",
 }: {
-  placement?: "floating" | "rail";
+  placement?: "floating" | "rail" | "header";
   className?: string;
 }) {
   const { design, setDesign, appearance, setAppearance } = useDesign();
@@ -52,20 +51,24 @@ export function PreferencesPanel({
   }, [open]);
 
   const rail = placement === "rail";
+  const header = placement === "header";
 
   return (
-    // Floating: left, not right -- the mobile Add FAB and, in dev, Next.js's
-    // own dev-tools indicator both live bottom-right. bottom-36 on mobile
-    // clears the Add FAB (bottom-20) and the tab bar beneath it.
     <div
       ref={ref}
-      className={`${rail ? "relative" : "fixed left-4 bottom-36 z-30 lg:left-6 lg:bottom-6"} ${className}`}
+      className={`${rail || header ? "relative" : "fixed bottom-6 left-6 z-30"} ${className}`}
     >
       {open && (
         <div
           // In the rail the panel opens beside the rail rather than above the
           // button, and is `fixed` so the rail's own overflow cannot clip it.
-          className={`w-72 rounded-[var(--radius)] p-4 ${rail ? "fixed bottom-6 left-20 z-40" : "mb-3"} ${design === "noir" ? "modal-in" : ""}`}
+          className={`w-72 rounded-[var(--radius)] p-4 ${
+            rail
+              ? "fixed bottom-6 left-20 z-40"
+              : header
+                ? "absolute right-0 top-full z-40 mt-3"
+                : "mb-3"
+          } ${design === "noir" ? "modal-in" : ""}`}
           style={{
             background: "var(--surface-1)",
             boxShadow: "inset 0 0 0 var(--border-w) var(--hairline), var(--shadow-raised)",

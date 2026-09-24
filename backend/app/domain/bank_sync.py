@@ -10,8 +10,8 @@ Four rules, each the same as an existing one:
   bank is ever contacted, and credentials left in ``.env`` switch nothing on.
 * **Idempotent by the bank's own id.** A re-sync overlaps the last one by a week
   (banks back-date late-settling rows), and every row already staged for the
-  account -- in any status, rejected included -- is skipped, so declining a row
-  is a decision that sticks.
+  bank link -- in any status, rejected included -- is skipped, so declining a
+  row is a decision that sticks even if the link is remapped later.
 * **Only what the ledger can hold.** Pending rows are skipped: they change
   amount or vanish before settling, and a staged pending row would duplicate the
   settled one. Non-GBP rows are skipped too; postings are GBP-only (a CHECK).
@@ -422,15 +422,15 @@ class SyncResult:
     batch_id: object | None
 
 
-def _seen_ids(session: Session, account_id, ids: list[str]) -> set[str]:
+def _seen_ids(session: Session, link_id, ids: list[str]) -> set[str]:
     if not ids:
         return set()
     external = ImportCandidate.raw["external_id"].astext
+    source_link = ImportCandidate.raw["bank_link_id"].astext
     return set(
         session.scalars(
             select(external)
-            .join(ImportBatch, ImportCandidate.batch_id == ImportBatch.id)
-            .where(ImportBatch.account_id == account_id, external.in_(ids))
+            .where(source_link == str(link_id), external.in_(ids))
         )
     )
 
@@ -463,7 +463,7 @@ def sync_link(
     sterling = [t for t in booked if t.currency == "GBP"]
     foreign_skipped = len(booked) - len(sterling)
 
-    seen = _seen_ids(session, link.account_id, [t.external_id for t in sterling if t.external_id])
+    seen = _seen_ids(session, link.id, [t.external_id for t in sterling if t.external_id])
     fresh = [t for t in sterling if not (t.external_id and t.external_id in seen)]
 
     batch = None
@@ -479,6 +479,7 @@ def sync_link(
                 raw={
                     "source": "bank",
                     "bank": connection.aspsp_name,
+                    "bank_link_id": str(link.id),
                     "external_id": t.external_id or "",
                     "counterparty": t.counterparty or "",
                 },

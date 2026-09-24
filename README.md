@@ -19,17 +19,19 @@ Three documents govern the code:
 **Phases 0–9 and 11 complete; Phase 10 is backups-done, deploy-yours.** It replaces a
 spreadsheet and then some: record transactions, manage balances, track budgets with rollover and
 warnings, save toward goals, see upcoming cash flow against a protected buffer, import statements
-and receipts through a candidate inbox, run what-if scenarios, and read an explanation of how
-every figure was reached. 674 tests.
+and receipts through a candidate inbox, sync UK bank feeds into that same review flow, automate
+categorisation with deterministic rules, split entries across categories, assign expected income
+in a zero-based month plan, run what-if scenarios, and read an explanation of how every figure was
+reached. 920 tests.
 
 A frontend visual design system also ships four switchable directions (Vault Noir, Field
 Ledger, Raw Ledger, Command Ledger), each with its own light and dark palette, picked from the
 gear icon on every screen. See `docs/HANDOFF.md`'s Frontend section for where it lives and
 `docs/DECISIONS.md` for why it's built the way it is.
 
-Left to do: the deploy itself, and a follow-up pass on the design system (motion, more variance
-between screens, better use of empty space). `docs/RUNNING.md` describes the deploy setup worth
-having — Tailscale, real certificates, nothing exposed to the internet.
+Left to do: the deploy itself and the product decision about whether to retain four visual
+directions or consolidate them. `docs/RUNNING.md` describes the deploy setup worth having —
+Tailscale, real certificates, nothing exposed to the internet.
 
 ## Design in one paragraph
 
@@ -104,16 +106,18 @@ backend/
                  budget_warnings, merchant_baseline, budget_recovery, recurrence,
                  obligations, income, reimbursement, impact, analytics, restore,
                  calendar, classification, disposable, money, simulation,
-                 importing, receipts, enrichment, explain, insights, backup
+                 importing, receipts, enrichment, explain, insights, backup,
+                 rules, plan, bank_sync
     api/         routes and the minor-unit boundary
   alembic/       migrations, including the L1 balance and L3 correction triggers
   scripts/       seed_demo.py, backup.py, set_password.py, backfill_categories.py
   tests/unit/    one module per invariant group
 frontend/
   src/lib/       API client, minor-unit money formatting
-  src/components/ app shell, transaction entry, stat tiles, budget card and meter, balance curve
-  src/app/       ten screens: dashboard, transactions, analytics, insights, budgets,
-                 calendar, goals, simulator, import, data
+  src/components/ app shell, split transaction entry, rules, bank connections,
+                  month plan, stat tiles, budget cards, calendar and charts
+  src/app/       eleven screens: dashboard, transactions, accounts, analytics, insights,
+                 budgets, calendar, goals, simulator, import, data
 docs/
 ```
 

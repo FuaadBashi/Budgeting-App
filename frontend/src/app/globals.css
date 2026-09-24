@@ -703,8 +703,14 @@
   /* A light sweep across a button on hover -- opt-in via .btn-shine,
      reserved for the app's money-moving actions (Add, Record, Accept)
      rather than every button, so it reads as weight, not noise. */
-  [data-design="noir"] .btn-shine {
+  /* Some call sites may carry Tailwind's `fixed` utility. Do not replace that
+     with `relative` just to anchor the shine pseudo-element: it would put the
+     control back in normal flow and can clip it outside the viewport. */
+  [data-design="noir"] .btn-shine:not(.fixed) {
     position: relative;
+    overflow: hidden;
+  }
+  [data-design="noir"] .btn-shine.fixed {
     overflow: hidden;
   }
   [data-design="noir"] .btn-shine::after {
@@ -721,7 +727,7 @@
   }
 
   /* A slow breathing glow -- opt-in, reserved for the icon-only Add
-     button (mobile FAB, rail, dock). A bare icon with no text label is
+     button (mobile header, rail, dock). A bare icon with no text label is
      the one control in the app that most benefits from staying
      findable without shouting -- see AppShell's file header on why the
      Add action is deliberately prominent everywhere. */

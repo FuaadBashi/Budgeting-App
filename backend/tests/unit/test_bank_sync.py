@@ -202,6 +202,22 @@ def test_a_resync_does_not_restage_a_row_even_after_it_was_rejected(session, acc
     assert len(candidates(session)) == 1
 
 
+def test_remapping_a_link_does_not_restage_a_row(session, accounts):
+    """The provider account, not its current ledger destination, owns identity."""
+    bank = FakeBank([txn("t1", date(2026, 9, 18), "-12.40")])
+    _, link = connected(session, bank, accounts)
+    bank_sync.sync_link(session, bank, link, today=TODAY, now=NOW, enrich=False)
+
+    link.account_id = accounts["cash"].id
+    session.commit()
+    again = bank_sync.sync_link(
+        session, bank, link, today=TODAY, now=NOW + timedelta(hours=1), enrich=False
+    )
+
+    assert (again.staged, again.already_seen) == (0, 1)
+    assert len(candidates(session)) == 1
+
+
 def test_pending_and_foreign_rows_are_skipped_and_counted(session, accounts):
     bank = FakeBank([
         txn("t1", date(2026, 9, 18), "-12.40"),
