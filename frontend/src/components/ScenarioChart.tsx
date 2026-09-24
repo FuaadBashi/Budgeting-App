@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { PICK_PROMPT, useChartSelection } from "@/lib/chartSelection";
 import type { ScenarioMonth } from "@/lib/api";
 import { formatMinor } from "@/lib/money";
 
@@ -44,7 +45,8 @@ export function ScenarioChart({
   months: ScenarioMonth[];
   bufferMinor: number;
 }) {
-  const [hover, setHover] = useState<number | null>(null);
+  const selection = useChartSelection(months.length);
+  const hover = selection.index;
   const [asTable, setAsTable] = useState(false);
   if (months.length < 2) return null;
 
@@ -95,10 +97,11 @@ export function ScenarioChart({
       <>
       <svg
         viewBox={`0 0 ${W} ${H}`}
-        className="w-full"
-        role="img"
-        aria-label="Projected cash, savings and invested contributions"
-        onMouseLeave={() => setHover(null)}
+        {...selection.svgProps(
+          W,
+          (vx) => ((vx - padLeft) / PLOT_W) * (months.length - 1),
+          "Projected cash, savings and invested contributions by month",
+        )}
       >
         <line
           x1={padLeft} x2={padLeft + PLOT_W} y1={bufferY} y2={bufferY}
@@ -150,17 +153,6 @@ export function ScenarioChart({
           />
         )}
 
-        {months.map((m, i) => (
-          <rect
-            key={m.month}
-            x={x(i) - PLOT_W / months.length / 2}
-            y={PAD.top}
-            width={PLOT_W / months.length}
-            height={PLOT_H}
-            fill="transparent"
-            onMouseEnter={() => setHover(i)}
-          />
-        ))}
       </svg>
 
       <div
@@ -186,7 +178,7 @@ export function ScenarioChart({
           </>
         ) : (
           <span className="text-xs" style={{ color: "var(--text-muted)" }}>
-            Hover a month for its balances.
+            {PICK_PROMPT} for a month&apos;s balances.
           </span>
         )}
       </div>

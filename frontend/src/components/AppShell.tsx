@@ -33,6 +33,7 @@ type Item = { key: string; label: string; icon: ReactNode; href?: string };
 const NAV: Item[] = [
   { key: "dashboard", label: "Dashboard", icon: <IconHome />, href: "/" },
   { key: "transactions", label: "Transactions", icon: <IconList />, href: "/transactions" },
+  { key: "accounts", label: "Accounts", icon: <IconWallet />, href: "/accounts" },
   { key: "analytics", label: "Analytics", icon: <IconChart />, href: "/analytics" },
   { key: "insights", label: "Insights", icon: <IconBulb />, href: "/insights" },
   { key: "budgets", label: "Budgets", icon: <IconMeter />, href: "/budgets" },
@@ -42,6 +43,11 @@ const NAV: Item[] = [
   { key: "import", label: "Import", icon: <IconInbox />, href: "/import" },
   { key: "data", label: "Data", icon: <IconArchive />, href: "/data" },
 ];
+
+//: The phone bar holds four of these plus More. Ten tabs in 390px gave each
+//: 39px: labels ran into each other and Data sat at x=397, off-screen, so Data
+//: and Import could not be reached from a phone at all.
+const MOBILE_PRIMARY = new Set(["dashboard", "transactions", "budgets", "calendar"]);
 
 //: How far the content column has to move over/under for each design's
 //: OWN fixed chrome. Field's masthead is `sticky`, not `fixed`, so it needs
@@ -90,22 +96,13 @@ export function AppShell({ children }: { children: ReactNode }) {
         </div>
       </div>
 
-      {/* Mobile bottom navigation -- identical across all four designs. */}
-      <nav
-        className="fixed inset-x-0 bottom-0 z-10 flex items-stretch border-t lg:hidden"
-        style={{
-          borderColor: "var(--hairline)",
-          background: "var(--surface-1)",
-          paddingBottom: "env(safe-area-inset-bottom)",
-        }}
-      >
-        {NAV.map((item) => (
-          <BottomLink key={item.key} item={item} />
-        ))}
-      </nav>
+      <MobileNav />
 
       <TransactionEntry className="fixed bottom-20 right-4 z-20 shadow-lg lg:hidden" />
-      <PreferencesPanel />
+      {/* The rail designs carry their own gear inside the rail on desktop. */}
+      <PreferencesPanel
+        className={design === "noir" || design === "console" ? "lg:hidden" : ""}
+      />
     </div>
   );
 }
@@ -125,8 +122,11 @@ function useIsCurrent(href?: string) {
 function RailNav({ design }: { design: "noir" | "console" }) {
   const width = design === "noir" ? "w-16" : "w-14";
   return (
+    // overflow-y-auto is the last resort for very short screens only: the
+    // ambient filler below gives up its height first, so at 720px everything
+    // fits without scrolling.
     <aside
-      className={`fixed inset-y-0 left-0 hidden ${width} flex-col items-center gap-1 border-r py-6 lg:flex`}
+      className={`fixed inset-y-0 left-0 hidden ${width} flex-col items-center gap-1 overflow-y-auto border-r py-6 lg:flex`}
       style={{ borderColor: "var(--hairline)", background: "var(--page-plane)" }}
     >
       {design === "noir" && (
@@ -152,11 +152,14 @@ function RailNav({ design }: { design: "noir" | "console" }) {
       {/* The rail is taller than ten icons on most screens -- rather than
           leave that column empty, noir fills it with a brass hairline and a
           live clock. Console/noir share this component, so the filler is
-          gated to noir specifically and is otherwise just flex space. */}
-      <div className="flex flex-1 flex-col items-center">
+          gated to noir specifically and is otherwise just flex space.
+          min-h-0 lets it shrink to nothing: without it the ornament kept its
+          ~260px and pushed the Add button below a 720px screen. */}
+      <div className="flex min-h-0 flex-1 flex-col items-center overflow-hidden">
         {design === "noir" && <RailAmbient />}
       </div>
-      <TransactionEntry iconOnly className="mt-2" />
+      <TransactionEntry iconOnly className="mt-2 shrink-0" />
+      <PreferencesPanel placement="rail" className="mt-1 shrink-0" />
     </aside>
   );
 }
@@ -266,12 +269,15 @@ function Ticks() {
 
 function MastheadNav() {
   return (
+    // gap-5 and a title that only appears at xl: by label widths, eleven links,
+    // the title and Add need roughly 1,270px at gap-7, more than lg's 1024. The
+    // empty span keeps mr-auto pushing the links right.
     <header
-      className="sticky top-0 z-10 hidden items-center gap-7 border-b px-8 lg:flex"
+      className="sticky top-0 z-10 hidden items-center gap-5 border-b px-8 lg:flex"
       style={{ height: 56, borderColor: "var(--text-primary)", borderBottomWidth: 2, background: "var(--page-plane)" }}
     >
       <span className="font-display mr-auto text-lg italic" style={{ color: "var(--text-primary)" }}>
-        Personal Finance OS
+        <span className="hidden xl:inline">Personal Finance OS</span>
       </span>
       {NAV.map((item) => (
         <MastheadLink key={item.key} item={item} />
@@ -328,7 +334,7 @@ function DockLink({ item }: { item: Item }) {
   const current = useIsCurrent(item.href);
   const className = "flex h-9 w-9 items-center justify-center";
   const style = current
-    ? { background: "var(--accent)", color: "var(--page-plane)" }
+    ? { background: "var(--accent)", color: "var(--on-accent)" }
     : { color: "var(--page-plane)" };
 
   if (!item.href) {
@@ -414,9 +420,93 @@ function CommandBar() {
    Mobile bottom navigation -- shared by every design.
    ============================================================ */
 
-function BottomLink({ item }: { item: Item }) {
+function MobileNav() {
+  const pathname = usePathname();
+  const [open, setOpen] = useState(false);
+  const primary = NAV.filter((item) => MOBILE_PRIMARY.has(item.key));
+  const more = NAV.filter((item) => !MOBILE_PRIMARY.has(item.key));
+  const moreCurrent = more.some(
+    (item) => item.href && item.href !== "/" && pathname.startsWith(item.href),
+  );
+
+  useEffect(() => {
+    if (!open) return;
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") setOpen(false);
+    }
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [open]);
+
+  return (
+    <>
+      {open && (
+        <>
+          <div
+            className="fixed inset-0 z-[35] lg:hidden"
+            style={{ background: "color-mix(in oklab, var(--page-plane) 55%, transparent)" }}
+            onClick={() => setOpen(false)}
+            aria-hidden
+          />
+          <div
+            id="mobile-more"
+            role="dialog"
+            aria-label="More screens"
+            className="fixed inset-x-3 z-40 grid grid-cols-3 gap-1 rounded-[var(--radius)] p-2 lg:hidden"
+            style={{
+              bottom: "calc(4rem + env(safe-area-inset-bottom))",
+              background: "var(--surface-1)",
+              boxShadow: "inset 0 0 0 var(--border-w) var(--hairline), var(--shadow-raised)",
+            }}
+          >
+            {more.map((item) => (
+              <BottomLink key={item.key} item={item} onNavigate={() => setOpen(false)} tile />
+            ))}
+          </div>
+        </>
+      )}
+      <nav
+        aria-label="Primary"
+        className="fixed inset-x-0 bottom-0 z-40 flex items-stretch border-t lg:hidden"
+        style={{
+          borderColor: "var(--hairline)",
+          background: "var(--surface-1)",
+          paddingBottom: "env(safe-area-inset-bottom)",
+        }}
+      >
+        {primary.map((item) => (
+          <BottomLink key={item.key} item={item} />
+        ))}
+        <button
+          type="button"
+          onClick={() => setOpen((v) => !v)}
+          aria-expanded={open}
+          aria-controls="mobile-more"
+          className="flex min-h-11 flex-1 flex-col items-center gap-1 py-2 text-[11px]"
+          style={{ color: open || moreCurrent ? "var(--accent)" : "var(--text-secondary)" }}
+        >
+          <IconDots />
+          More
+        </button>
+      </nav>
+    </>
+  );
+}
+
+function BottomLink({
+  item,
+  onNavigate,
+  tile = false,
+}: {
+  item: Item;
+  onNavigate?: () => void;
+  tile?: boolean;
+}) {
   const current = useIsCurrent(item.href);
-  const className = "flex flex-1 flex-col items-center gap-1 py-2 text-[10px]";
+  // min-h-11: 44px, the smallest target a thumb reliably hits.
+  const className = tile
+    ? "flex min-h-11 flex-col items-center justify-center gap-1 rounded-[var(--radius-sm)] py-3 text-xs"
+    : "flex min-h-11 flex-1 flex-col items-center gap-1 py-2 text-[11px]";
   const colour = !item.href
     ? "var(--text-muted)"
     : current
@@ -435,12 +525,23 @@ function BottomLink({ item }: { item: Item }) {
     <Link
       href={item.href}
       className={className}
-      style={{ color: colour }}
+      style={{ color: colour, background: tile && current ? "var(--accent-soft)" : undefined }}
       aria-current={current ? "page" : undefined}
+      onClick={onNavigate}
     >
       {item.icon}
       {item.label}
     </Link>
+  );
+}
+
+function IconDots() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 20 20" fill="currentColor" aria-hidden>
+      <circle cx="4.5" cy="10" r="1.5" />
+      <circle cx="10" cy="10" r="1.5" />
+      <circle cx="15.5" cy="10" r="1.5" />
+    </svg>
   );
 }
 
@@ -555,6 +656,16 @@ function IconInbox() {
     <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" className="h-5 w-5">
       <path d="M2.5 12.5h4l1.2 2h4.6l1.2-2h4" strokeLinecap="round" strokeLinejoin="round" />
       <path d="M4.3 4h11.4l1.8 8.5v3a1 1 0 0 1-1 1H3.5a1 1 0 0 1-1-1v-3L4.3 4Z" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function IconWallet() {
+  return (
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" className="h-5 w-5" aria-hidden>
+      <path d="M3 6.5A2.5 2.5 0 0 1 5.5 4H15v2.5" strokeLinejoin="round" />
+      <rect x="3" y="6.5" width="14" height="10" rx="1.5" />
+      <path d="M13.5 11.5h.01" strokeLinecap="round" strokeWidth="2" />
     </svg>
   );
 }

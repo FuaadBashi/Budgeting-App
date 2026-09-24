@@ -173,7 +173,7 @@ export function ImportInbox({
               type="submit"
               disabled={uploading}
               className="rounded-full px-4 py-2 text-sm font-medium"
-              style={{ background: "var(--accent)", color: "#fff", opacity: uploading ? 0.6 : 1 }}
+              style={{ background: "var(--accent)", color: "var(--on-accent)", opacity: uploading ? 0.6 : 1 }}
             >
               {uploading ? "Reading…" : "Upload"}
             </button>
@@ -234,7 +234,7 @@ export function ImportInbox({
               type="submit"
               disabled={uploading}
               className="rounded-full px-4 py-2 text-sm font-medium"
-              style={{ background: "var(--accent)", color: "#fff", opacity: uploading ? 0.6 : 1 }}
+              style={{ background: "var(--accent)", color: "var(--on-accent)", opacity: uploading ? 0.6 : 1 }}
             >
               {uploading ? "Reading…" : "Read receipt"}
             </button>
@@ -535,7 +535,7 @@ function CandidateRow({
                   })
                 }
                 className="btn-shine rounded-full px-3 py-1.5 text-xs font-medium"
-                style={{ background: "var(--accent)", color: "#fff", opacity: busy ? 0.6 : 1 }}
+                style={{ background: "var(--accent)", color: "var(--on-accent)", opacity: busy ? 0.6 : 1 }}
               >
                 {busy ? "Posting…" : "Accept"}
               </button>

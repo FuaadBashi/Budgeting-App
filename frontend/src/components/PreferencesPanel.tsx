@@ -16,12 +16,21 @@ const SWATCH_VARS = ["--page-plane", "--surface-1", "--accent", "--text-primary"
 
 /**
  * The one control every one of the four designs has to share, since the
- * whole point is comparing them -- so it lives outside all four nav
- * treatments rather than being reimplemented once per idiom. A fixed corner
- * button was simpler and more reliable than threading a bespoke entry point
- * into an icon rail, a masthead, a floating dock and a command bar.
+ * whole point is comparing them.
+ *
+ * Two placements. `floating` is a fixed corner button, used on mobile and by
+ * the designs whose desktop chrome leaves the bottom-left corner empty. `rail`
+ * sits inside the icon rail, because the floating button landed exactly on the
+ * rail's Add button: in Vault Noir and Command Ledger the most important action
+ * in the app could not be clicked, and hit-testing returned the gear.
  */
-export function PreferencesPanel() {
+export function PreferencesPanel({
+  placement = "floating",
+  className = "",
+}: {
+  placement?: "floating" | "rail";
+  className?: string;
+}) {
   const { design, setDesign, appearance, setAppearance } = useDesign();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -42,16 +51,21 @@ export function PreferencesPanel() {
     };
   }, [open]);
 
+  const rail = placement === "rail";
+
   return (
-    // Left, not right: the mobile Add FAB and, in dev, Next.js's own floating
-    // dev-tools indicator both live bottom-right, and this button being
-    // invisible-but-clickable-over would be worse than it being on the other
-    // side. bottom-36 on mobile clears the Add FAB (bottom-20) and the tab
-    // bar beneath it; lg:bottom-6 tightens up once there is no bottom nav.
-    <div ref={ref} className="fixed left-4 bottom-36 z-30 lg:left-6 lg:bottom-6">
+    // Floating: left, not right -- the mobile Add FAB and, in dev, Next.js's
+    // own dev-tools indicator both live bottom-right. bottom-36 on mobile
+    // clears the Add FAB (bottom-20) and the tab bar beneath it.
+    <div
+      ref={ref}
+      className={`${rail ? "relative" : "fixed left-4 bottom-36 z-30 lg:left-6 lg:bottom-6"} ${className}`}
+    >
       {open && (
         <div
-          className={`mb-3 w-72 rounded-[var(--radius)] p-4 ${design === "noir" ? "modal-in" : ""}`}
+          // In the rail the panel opens beside the rail rather than above the
+          // button, and is `fixed` so the rail's own overflow cannot clip it.
+          className={`w-72 rounded-[var(--radius)] p-4 ${rail ? "fixed bottom-6 left-20 z-40" : "mb-3"} ${design === "noir" ? "modal-in" : ""}`}
           style={{
             background: "var(--surface-1)",
             boxShadow: "inset 0 0 0 var(--border-w) var(--hairline), var(--shadow-raised)",
@@ -93,12 +107,20 @@ export function PreferencesPanel() {
         onClick={() => setOpen((v) => !v)}
         aria-label="Open appearance preferences"
         aria-expanded={open}
-        className="btn-shine flex h-11 w-11 items-center justify-center rounded-full"
-        style={{
-          background: "var(--surface-1)",
-          color: "var(--text-secondary)",
-          boxShadow: "inset 0 0 0 var(--border-w) var(--hairline), var(--shadow-raised)",
-        }}
+        className={
+          rail
+            ? "navlink flex h-10 w-10 items-center justify-center rounded-[var(--radius-sm)]"
+            : "btn-shine flex h-11 w-11 items-center justify-center rounded-full"
+        }
+        style={
+          rail
+            ? { color: open ? "var(--accent)" : "var(--text-muted)" }
+            : {
+                background: "var(--surface-1)",
+                color: "var(--text-secondary)",
+                boxShadow: "inset 0 0 0 var(--border-w) var(--hairline), var(--shadow-raised)",
+              }
+        }
       >
         <IconGear />
       </button>
@@ -174,7 +196,7 @@ function AppearanceOption({
       className="flex-1 rounded-full py-1.5 text-xs font-medium"
       style={{
         background: active ? "var(--accent)" : "transparent",
-        color: active ? "var(--surface-1)" : "var(--text-secondary)",
+        color: active ? "var(--on-accent)" : "var(--text-secondary)",
       }}
     >
       {APPEARANCE_LABEL[value]}

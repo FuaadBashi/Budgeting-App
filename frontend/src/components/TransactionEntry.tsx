@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useMemo, useState, useSyncExternalStore, type FormEvent, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
@@ -187,7 +188,7 @@ export function TransactionEntry({
             ? `btn-shine pulse-invite flex items-center justify-center rounded-full p-3 transition-opacity hover:opacity-90 ${className}`
             : `btn-shine flex items-center gap-2 rounded-full px-4 py-3 text-sm font-medium transition-opacity hover:opacity-90 ${className}`
         }
-        style={{ background: "var(--accent)", color: "#ffffff" }}
+        style={{ background: "var(--accent)", color: "var(--on-accent)" }}
         aria-haspopup="dialog"
         aria-label={iconOnly ? "Add" : undefined}
       >
@@ -329,7 +330,11 @@ export function TransactionEntry({
 
                 {!loading && (choices.source.length === 0 || choices.destination.length === 0) && (
                   <p className="text-sm" style={{ color: "var(--status-warning)" }} role="status">
-                    ▲ This transaction type needs matching ledger accounts. Add or seed them through the API first.
+                    ▲ This transaction type needs an account on each side.{" "}
+                    <Link href="/accounts" onClick={() => setOpen(false)} className="underline">
+                      Set them up on the Accounts screen
+                    </Link>
+                    .
                   </p>
                 )}
 
@@ -337,7 +342,7 @@ export function TransactionEntry({
                   <button type="button" onClick={() => setOpen(false)} disabled={saving} className="rounded-full px-4 py-2.5 text-sm font-medium disabled:opacity-50" style={{ color: "var(--text-secondary)" }}>
                     Cancel
                   </button>
-                  <button type="submit" disabled={saving || choices.source.length === 0 || choices.destination.length === 0} className="btn-shine rounded-full px-5 py-2.5 text-sm font-medium text-white disabled:opacity-50" style={{ background: "var(--accent)" }}>
+                  <button type="submit" disabled={saving || choices.source.length === 0 || choices.destination.length === 0} className="btn-shine rounded-full px-5 py-2.5 text-sm font-medium disabled:opacity-50" style={{ background: "var(--accent)", color: "var(--on-accent)" }}>
                     {saving ? "Recording…" : "Record transaction"}
                   </button>
                 </div>

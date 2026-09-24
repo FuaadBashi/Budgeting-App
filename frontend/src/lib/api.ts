@@ -493,6 +493,21 @@ export const reconcileAccount = (accountId: string, asOf: string, statedBalanceM
     `/accounts/${accountId}/reconcile?as_of=${asOf}&stated_balance_minor=${statedBalanceMinor}`,
   );
 export const getCategories = () => get<Category[]>("/categories");
+
+export interface AccountInput {
+  name: string;
+  kind: string;
+  /** Signed, as stored: a liability's amount owed is negative. */
+  opening_balance_minor: Minor;
+}
+export const createAccount = (input: AccountInput) => post<Account>("/accounts", input);
+
+export interface CategoryInput {
+  name: string;
+  parent_id: string | null;
+  nature: Category["nature"];
+}
+export const createCategory = (input: CategoryInput) => post<Category>("/categories", input);
 export const createTransaction = (input: TransactionInput) =>
   post<Transaction>("/transactions", input);
 export const getBudgets = () => get<BudgetPeriod[]>("/dashboard/budgets");
@@ -768,6 +783,9 @@ export interface TransactionFilters {
   end?: string;
   minAmountMinor?: number;
   maxAmountMinor?: number;
+  /** Rows to skip, most recent first. The API pages; without this the list
+   *  stopped at its first page and older history was unreachable. */
+  offset?: number;
 }
 
 export const getTransactions = (
@@ -789,8 +807,20 @@ export const getTransactions = (
   if (filters.maxAmountMinor !== undefined) {
     params.set("max_amount_minor", String(filters.maxAmountMinor));
   }
+  if (filters.offset) params.set("offset", String(filters.offset));
   return get<Transaction[]>(`/transactions?${params.toString()}`);
 };
+
+/** The non-monetary fields. Amount and date are refused by the API with a
+ *  422 that says to void and re-enter instead -- see rulebook section 2. */
+export interface TransactionEdit {
+  description?: string;
+  merchant?: string | null;
+  category_id?: string | null;
+}
+
+export const editTransaction = (id: string, edit: TransactionEdit) =>
+  patch<Transaction>(`/transactions/${id}`, edit);
 
 export async function voidTransaction(id: string): Promise<Transaction> {
   const res = await fetch(`${BASE}/transactions/${id}/void`, {

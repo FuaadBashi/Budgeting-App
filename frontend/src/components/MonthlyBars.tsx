@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { PICK_PROMPT, useChartSelection } from "@/lib/chartSelection";
 import type { PeriodSummary } from "@/lib/api";
 import { formatMinor } from "@/lib/money";
 
@@ -25,7 +25,8 @@ function monthLabel(iso: string): string {
  * these two compare in March", and adjacent bars answer it directly.
  */
 export function MonthlyBars({ months }: { months: PeriodSummary[] }) {
-  const [hover, setHover] = useState<number | null>(null);
+  const selection = useChartSelection(months.length);
+  const hover = selection.index;
   if (months.length === 0) return null;
 
   const peak = Math.max(
@@ -42,6 +43,9 @@ export function MonthlyBars({ months }: { months: PeriodSummary[] }) {
   const h = (v: number) => (Math.max(0, v) / peak) * PLOT_H;
 
   const active = hover !== null ? months[hover] : null;
+  // Slot i spans [originX + slot*i, originX + slot*(i+1)); the hook rounds,
+  // so the half-slot shift makes that rounding a floor.
+  const svg = selection.svgProps(100, (vx) => (vx - originX) / slot - 0.5, "Income and spending by month");
 
   return (
     <figure className="m-0">
@@ -53,11 +57,8 @@ export function MonthlyBars({ months }: { months: PeriodSummary[] }) {
       <svg
         viewBox={`0 0 100 ${H}`}
         preserveAspectRatio="none"
-        className="w-full"
-        style={{ height: H }}
-        role="img"
-        aria-label="Income and spending by month"
-        onMouseLeave={() => setHover(null)}
+        {...svg}
+        style={{ ...svg.style, height: H }}
       >
         <line
           x1="0" x2="100" y1={PAD.top + PLOT_H} y2={PAD.top + PLOT_H}
@@ -90,11 +91,6 @@ export function MonthlyBars({ months }: { months: PeriodSummary[] }) {
                 height={h(m.expense_minor)}
                 fill="var(--series-2)"
                 rx="0.4"
-              />
-              <rect
-                x={originX + slot * i} y={PAD.top} width={slot} height={PLOT_H}
-                fill="transparent"
-                onMouseEnter={() => setHover(i)}
               />
             </g>
           );
@@ -146,7 +142,7 @@ export function MonthlyBars({ months }: { months: PeriodSummary[] }) {
           </>
         ) : (
           <span className="text-xs" style={{ color: "var(--text-muted)" }}>
-            Hover a month for its income, spending and net.
+            {PICK_PROMPT} for a month&apos;s income, spending and net.
           </span>
         )}
       </div>

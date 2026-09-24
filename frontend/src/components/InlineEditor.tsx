@@ -146,7 +146,7 @@ export function InlineEditor({
           type="submit"
           disabled={busy}
           className="rounded-full px-4 py-1.5 text-xs font-medium"
-          style={{ background: "var(--accent)", color: "#fff", opacity: busy ? 0.6 : 1 }}
+          style={{ background: "var(--accent)", color: "var(--on-accent)", opacity: busy ? 0.6 : 1 }}
         >
           {busy ? "Saving…" : "Save"}
         </button>
