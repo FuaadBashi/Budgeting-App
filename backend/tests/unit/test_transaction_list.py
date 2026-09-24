@@ -116,3 +116,21 @@ def test_a_voided_transaction_is_still_excluded_by_default_alongside_other_filte
     client.post(f"/api/transactions/{txn.id}/void")
     assert client.get("/api/transactions?q=tesco").json() == []
     assert names(client.get("/api/transactions?q=tesco&include_voided=true")) == ["TESCO STORES 3421"]
+
+
+def test_paging_returns_every_row_exactly_once(client, session, accounts):
+    """One commit gives every row the same created_at -- now() is fixed for the
+    whole database transaction, which is exactly what an import batch does. Tied
+    on both sort keys, rows had no order of their own, and offset paging could
+    show one twice and another never."""
+    for i in range(30):
+        post(session, TODAY, f"Row {i:02d}",
+             [(accounts["current"], "-1"), (accounts["groceries"], "1")], commit=False)
+    session.commit()
+
+    seen = []
+    for offset in range(0, 30, 7):
+        seen += [t["id"] for t in client.get(f"/api/transactions?limit=7&offset={offset}").json()]
+
+    assert len(seen) == 30
+    assert len(set(seen)) == 30

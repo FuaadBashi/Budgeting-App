@@ -8,6 +8,7 @@
 from __future__ import annotations
 
 import json
+import uuid
 from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal
 from pathlib import Path
@@ -20,7 +21,7 @@ from app.db import get_session
 from app.domain import backup, restore as restore_module
 from app.domain.disposable import account_balances, net_worth
 from app.main import app
-from app.models import Base, FutureObligation, ObligationInstance
+from app.models import Base, FutureObligation, ObligationInstance, Posting, Transaction
 from tests.conftest import post
 
 NOW = datetime(2026, 8, 31, 14, 25, 30, tzinfo=timezone.utc)
@@ -62,6 +63,40 @@ def test_the_written_file_matches_the_export_endpoint_byte_for_byte(
     from_disk = written.path.read_text()
     from_api = client.get("/api/export/backup.json").text
     assert json.loads(from_disk) == json.loads(from_api)
+
+
+LOW = uuid.UUID("00000000-0000-4000-8000-000000000001")
+HIGH = uuid.UUID("ffffffff-ffff-4fff-bfff-fffffffffffe")
+
+
+def test_same_day_transactions_are_listed_in_a_fixed_order(session, accounts):
+    """B-A needs the file to be a function of the data, not of where Postgres
+    happened to put the rows. Inserted high-id first, so ordering by date alone
+    returns them in insertion order and this fails."""
+    for txn_id in (HIGH, LOW):
+        post(session, date(2026, 8, 4), "Coffee",
+             [(accounts["current"], "-3"), (accounts["groceries"], "3")], id=txn_id)
+
+    listed = [t["id"] for t in backup.build_payload(session)["transactions"]]
+    assert listed == [str(LOW), str(HIGH)]
+
+
+def test_a_transaction_s_postings_are_listed_in_a_fixed_order(session, accounts):
+    """The postings relationship has no order of its own, so the legs came back
+    in load order."""
+    txn = Transaction(
+        occurred_at=datetime(2026, 8, 4, 12, tzinfo=timezone.utc),
+        booking_date=date(2026, 8, 4),
+        description="Coffee",
+    )
+    txn.postings.append(Posting(id=HIGH, account=accounts["current"], amount=Decimal("-3")))
+    txn.postings.append(Posting(id=LOW, account=accounts["groceries"], amount=Decimal("3")))
+    session.add(txn)
+    session.commit()
+    session.expire_all()
+
+    (listed,) = backup.build_payload(session)["transactions"]
+    assert [p["id"] for p in listed["postings"]] == [str(LOW), str(HIGH)]
 
 
 # --------------------------------------------------------------------------
