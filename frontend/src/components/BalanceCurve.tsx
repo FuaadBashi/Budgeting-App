@@ -1,6 +1,7 @@
 "use client";
 
-import { useId, useState, type CSSProperties } from "react";
+import { useId, type CSSProperties } from "react";
+import { PICK_PROMPT, useChartSelection } from "@/lib/chartSelection";
 import type { CalendarDay } from "@/lib/api";
 import { useDesign } from "@/lib/design";
 import { formatMinor, formatSignedMinor } from "@/lib/money";
@@ -61,7 +62,8 @@ export function BalanceCurve({
   troughDate: string | null;
 }) {
   const clipId = useId();
-  const [hover, setHover] = useState<number | null>(null);
+  const selection = useChartSelection(days.length);
+  const hover = selection.index;
   const { design } = useDesign();
   const animated = design === "noir";
 
@@ -116,10 +118,11 @@ export function BalanceCurve({
     <figure className="m-0">
       <svg
         viewBox={`0 0 ${W} ${H}`}
-        className="w-full"
-        role="img"
-        aria-label="Projected liquid cash balance over time"
-        onMouseLeave={() => setHover(null)}
+        {...selection.svgProps(
+          W,
+          (vx) => ((vx - padLeft) / PLOT_W) * (days.length - 1),
+          "Projected liquid cash balance by day",
+        )}
       >
         <defs>
           {/* The breach region is the area below the buffer, clipped to the fill. */}
@@ -251,18 +254,6 @@ export function BalanceCurve({
           />
         )}
 
-        {/* Hit targets are far wider than the marks, so hovering is not fiddly. */}
-        {days.map((d, i) => (
-          <rect
-            key={d.day}
-            x={x(i) - PLOT_W / days.length / 2}
-            y={PAD_TOP}
-            width={PLOT_W / days.length}
-            height={PLOT_H}
-            fill="transparent"
-            onMouseEnter={() => setHover(i)}
-          />
-        ))}
       </svg>
 
       <div
@@ -300,7 +291,7 @@ export function BalanceCurve({
           </>
         ) : (
           <span className="text-xs" style={{ color: "var(--text-muted)" }}>
-            Hover the curve for the balance and events on any day.
+            {PICK_PROMPT} for the balance and events on any day.
           </span>
         )}
       </div>

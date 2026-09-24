@@ -199,7 +199,7 @@ export function TriageDeck({
           disabled={busy || !account}
           onClick={() => decide(true)}
           className="flex-1 rounded-full py-3 text-sm font-medium"
-          style={{ background: "var(--accent)", color: "#fff", opacity: busy || !account ? 0.5 : 1 }}
+          style={{ background: "var(--accent)", color: "var(--on-accent)", opacity: busy || !account ? 0.5 : 1 }}
         >
           {busy ? "Posting…" : "Accept"}
         </button>

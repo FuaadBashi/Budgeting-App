@@ -1,17 +1,25 @@
+import Link from "next/link";
 import { AppShell } from "@/components/AppShell";
 import { requireSession } from "@/lib/guard";
 import { TransactionFilterBar } from "@/components/TransactionFilterBar";
 import { TransactionList } from "@/components/TransactionList";
 import {
+  getAccounts,
   getCategories,
   getTransactions,
+  type Account,
   type Category,
   type Transaction,
 } from "@/lib/api";
 
 export const dynamic = "force-dynamic";
 
+//: One row more than a page is fetched, to learn whether an older page exists
+//: without a separate count query.
+const PAGE_SIZE = 100;
+
 type Params = {
+  page?: string;
   voided?: string;
   q?: string;
   category?: string;
@@ -69,23 +77,42 @@ export default async function TransactionsPage({
     params.max && maxAmountMinor === undefined ? `Max amount ("${params.max}")` : null,
   ].filter(Boolean) as string[];
 
+  const page = Math.max(1, Math.floor(Number(params.page)) || 1);
+
   let transactions: Transaction[] = [];
   let categories: Category[] = [];
+  let accounts: Account[] = [];
   let error: string | null = null;
   try {
-    [transactions, categories] = await Promise.all([
-      getTransactions(100, showVoided, {
+    [transactions, categories, accounts] = await Promise.all([
+      getTransactions(PAGE_SIZE + 1, showVoided, {
         q,
         categoryId,
         start,
         end,
         minAmountMinor,
         maxAmountMinor,
+        offset: (page - 1) * PAGE_SIZE,
       }),
       getCategories(),
+      getAccounts(),
     ]);
   } catch (e) {
     error = e instanceof Error ? e.message : "Unknown error";
+  }
+  const hasOlder = transactions.length > PAGE_SIZE;
+  transactions = transactions.slice(0, PAGE_SIZE);
+  const expenseAccountIds = accounts.filter((a) => a.kind === "expense").map((a) => a.id);
+
+  // Every other filter survives paging; only the page number changes.
+  function pageHref(target: number): string {
+    const next = new URLSearchParams();
+    for (const [key, value] of Object.entries(params)) {
+      if (key !== "page" && value) next.set(key, value);
+    }
+    if (target > 1) next.set("page", String(target));
+    const query = next.toString();
+    return query ? `/transactions?${query}` : "/transactions";
   }
 
   const active = Boolean(q || categoryId || start || end || params.min || params.max);
@@ -101,7 +128,7 @@ export default async function TransactionsPage({
             Transactions
           </h1>
           <p className="text-sm" style={{ color: "var(--text-muted)" }}>
-            Most recent first
+            Most recent first{page > 1 ? ` · page ${page}` : ""}
           </p>
         </header>
 
@@ -135,7 +162,30 @@ export default async function TransactionsPage({
             Nothing matches these filters.
           </div>
         ) : (
-          <TransactionList transactions={transactions} showVoided={showVoided} />
+          <>
+            <TransactionList
+              transactions={transactions}
+              showVoided={showVoided}
+              categories={categories}
+              expenseAccountIds={expenseAccountIds}
+            />
+            {(page > 1 || hasOlder) && (
+              <nav className="flex items-center justify-between text-sm" aria-label="Pages">
+                {page > 1 ? (
+                  <Link href={pageHref(page - 1)} className="min-h-9 rounded-full px-4 py-2" style={{ color: "var(--text-secondary)", boxShadow: "inset 0 0 0 1px var(--hairline-strong)" }}>
+                    ← Newer
+                  </Link>
+                ) : (
+                  <span />
+                )}
+                {hasOlder && (
+                  <Link href={pageHref(page + 1)} className="min-h-9 rounded-full px-4 py-2" style={{ color: "var(--text-secondary)", boxShadow: "inset 0 0 0 1px var(--hairline-strong)" }}>
+                    Older →
+                  </Link>
+                )}
+              </nav>
+            )}
+          </>
         )}
       </main>
     </AppShell>

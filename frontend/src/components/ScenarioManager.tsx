@@ -160,7 +160,7 @@ export function ScenarioManager({ initial }: { initial: Scenario[] }) {
               className="rounded-full px-3 py-1.5 text-xs"
               style={
                 s.id === selected
-                  ? { background: "var(--accent)", color: "#fff" }
+                  ? { background: "var(--accent)", color: "var(--on-accent)" }
                   : {
                       color: "var(--text-secondary)",
                       boxShadow: "inset 0 0 0 1px var(--hairline-strong)",
@@ -313,7 +313,7 @@ export function ScenarioManager({ initial }: { initial: Scenario[] }) {
               type="submit"
               disabled={busy}
               className="ml-auto rounded-full px-4 py-2 text-sm font-medium"
-              style={{ background: "var(--accent)", color: "#fff", opacity: busy ? 0.6 : 1 }}
+              style={{ background: "var(--accent)", color: "var(--on-accent)", opacity: busy ? 0.6 : 1 }}
             >
               {busy ? "Saving…" : editing ? "Save changes" : "Create scenario"}
             </button>

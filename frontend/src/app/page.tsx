@@ -4,6 +4,7 @@ import { AppShell } from "@/components/AppShell";
 import { requireSession } from "@/lib/guard";
 import { BalanceCurve } from "@/components/BalanceCurve";
 import { BudgetCard } from "@/components/BudgetCard";
+import { SetupChecklist } from "@/components/SetupChecklist";
 import { StatTile } from "@/components/StatTile";
 import {
   getAccounts,
@@ -20,6 +21,7 @@ import {
   type SafeToSpend,
 } from "@/lib/api";
 import { formatMinor, formatSignedMinor } from "@/lib/money";
+import { setupSteps } from "@/lib/setup";
 
 export const dynamic = "force-dynamic";
 
@@ -76,7 +78,26 @@ export default async function Dashboard() {
     );
   }
 
+  // With nowhere to hold money every figure below is a computed zero, and the
+  // page used to present those zeros as good news ("On plan.", a tick against a
+  // £0.00 buffer). A fresh install gets the way forward instead.
+  const steps = setupSteps(accounts);
+  if (!steps[0].done) {
+    return (
+      <AppShell>
+        <main className="mx-auto max-w-5xl space-y-6 px-4 py-6 sm:px-6 lg:py-10">
+          <h1 className="font-display text-xl sm:text-2xl" style={{ color: "var(--text-primary)" }}>
+            Dashboard
+          </h1>
+          <SetupChecklist steps={steps} linkToAccounts />
+        </main>
+      </AppShell>
+    );
+  }
+
   const negative = sts.safe_to_spend_minor < 0;
+  // Nothing planned is not the same as being on plan.
+  const nothingPlanned = !recovery || recovery.planned_total_minor === 0;
 
   // Safe to spend TODAY is the tightest daily allowance any active budget
   // permits -- showing a looser one invites spending the binding budget dry.
@@ -128,6 +149,13 @@ export default async function Dashboard() {
           )}
         </header>
 
+        {/* Only while spending cannot be recorded. Someone who never logs income
+            should not be nagged about an income source on every visit; the
+            Accounts screen still lists it. */}
+        {steps.some((s) => s.key !== "income" && !s.done) && (
+          <SetupChecklist steps={steps} linkToAccounts />
+        )}
+
         {/* Plan section 11.1: the recommended top row, in the order it specifies.
             Each cell staggers in on its own delay -- see .stagger-in, noir only. */}
         <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -168,20 +196,20 @@ export default async function Dashboard() {
           <div className="stagger-in" style={{ "--i": 2 } as CSSProperties}>
             <StatTile
               label="Projected month-end savings"
-              value={recovery ? recovery.projected_contribution_total_minor : "—"}
+              value={recovery && !nothingPlanned ? recovery.projected_contribution_total_minor : "—"}
               tone={
-                recovery && recovery.projected_contribution_total_minor <
-                recovery.planned_total_minor
-                  ? "warning"
-                  : "good"
+                nothingPlanned
+                  ? "neutral"
+                  : recovery!.projected_contribution_total_minor < recovery!.planned_total_minor
+                    ? "warning"
+                    : "good"
               }
               support={
-                recovery
-                  ? recovery.projected_contribution_total_minor <
-                    recovery.planned_total_minor
-                    ? `▲ ${formatMinor(recovery.planned_total_minor)} planned.`
+                nothingPlanned
+                  ? "No savings planned this month."
+                  : recovery!.projected_contribution_total_minor < recovery!.planned_total_minor
+                    ? `▲ ${formatMinor(recovery!.planned_total_minor)} planned.`
                     : "On plan."
-                  : undefined
               }
             />
           </div>
@@ -281,6 +309,13 @@ export default async function Dashboard() {
                     {calendar.first_breach_cause ?? "A committed payment"} on{" "}
                     {shortDate(calendar.first_breach_date)} takes projected cash
                     below your {formatMinor(calendar.protected_buffer_minor)} buffer.
+                  </>
+                ) : calendar.protected_buffer_minor === 0 ? (
+                  // A tick against a £0.00 buffer read as a safety margin that
+                  // does not exist.
+                  <>
+                    Projected cash stays above zero for the next 90 days. No
+                    protected cash buffer is set.
                   </>
                 ) : (
                   <>

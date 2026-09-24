@@ -113,7 +113,7 @@ export function BackupPanel({ status }: { status: BackupStatus }) {
             disabled={busy}
             onClick={onRun}
             className="rounded-full px-4 py-2 text-sm font-medium"
-            style={{ background: "var(--accent)", color: "#fff", opacity: busy ? 0.6 : 1 }}
+            style={{ background: "var(--accent)", color: "var(--on-accent)", opacity: busy ? 0.6 : 1 }}
           >
             {busy ? "Writing…" : "Back up now"}
           </button>

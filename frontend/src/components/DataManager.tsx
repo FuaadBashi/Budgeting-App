@@ -128,7 +128,7 @@ export function DataManager({ empty }: { empty: boolean }) {
             disabled={busy !== null}
             onClick={() => download("/export/backup.json", "backup.json")}
             className="rounded-full px-4 py-2 text-sm font-medium"
-            style={{ background: "var(--accent)", color: "#fff" }}
+            style={{ background: "var(--accent)", color: "var(--on-accent)" }}
           >
             {busy === "/export/backup.json" ? "Preparing…" : "Download backup"}
           </button>

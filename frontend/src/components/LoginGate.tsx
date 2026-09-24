@@ -77,7 +77,7 @@ export function LoginGate() {
             className="w-full rounded-full px-4 py-3 text-sm font-medium"
             style={{
               background: "var(--accent)",
-              color: "#ffffff",
+              color: "var(--on-accent)",
               opacity: busy ? 0.6 : 1,
             }}
           >

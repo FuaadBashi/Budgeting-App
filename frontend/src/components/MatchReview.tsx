@@ -232,7 +232,7 @@ export function MatchReview({
                     className="w-full rounded-full px-4 py-2 text-sm font-medium"
                     style={{
                       background: "var(--accent)",
-                      color: "#fff",
+                      color: "var(--on-accent)",
                       opacity:
                         busy?.instanceId === instance.id || !txn || txn.status === "voided"
                           ? 0.6

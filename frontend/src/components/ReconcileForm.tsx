@@ -131,7 +131,7 @@ export function ReconcileForm({ accounts }: { accounts: Account[] }) {
             type="submit"
             disabled={busy || reconcilable.length === 0}
             className="rounded-full px-4 py-2 text-sm font-medium disabled:opacity-50"
-            style={{ background: "var(--accent)", color: "#fff" }}
+            style={{ background: "var(--accent)", color: "var(--on-accent)" }}
           >
             {busy ? "Checking…" : "Check"}
           </button>
