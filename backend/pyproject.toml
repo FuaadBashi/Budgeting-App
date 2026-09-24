@@ -14,10 +14,12 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["pytest>=8.0", "httpx>=0.27"]
+dev = ["pytest>=8.0", "httpx>=0.27", "pyjwt[crypto]>=2.8"]
 #: Only needed to actually call Claude. Without it, and without an API key,
 #: every suggestion path is a no-op (A3).
 llm = ["anthropic>=0.40"]
+#: Only needed to sign Enable Banking requests. Without it bank sync stays off.
+bank = ["pyjwt[crypto]>=2.8"]
 
 [tool.setuptools]
 # Named explicitly. Flat-layout auto-discovery treats every top-level directory

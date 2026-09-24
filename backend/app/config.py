@@ -61,5 +61,21 @@ class Settings(BaseSettings):
     #: does not mean rewriting three unrelated settings.
     anthropic_api_key: str = ""
 
+    #: Bank sync. "none" is the default and means no bank is ever contacted --
+    #: like the model features, a stray credential does not switch it on.
+    #: "enable_banking" uses Enable Banking's account-information API, whose
+    #: free restricted mode returns only accounts you have linked yourself.
+    bank_sync_provider: str = "none"
+    #: The application id from the Enable Banking control panel. It is the
+    #: `kid` of every signed request, not a secret.
+    enable_banking_app_id: str = ""
+    #: Path to the application's private key (PEM). The key is the secret; it
+    #: is read from disk per request and never logged, returned or backed up.
+    enable_banking_key_path: str = ""
+    #: Where the bank sends the person back after they consent. Must be
+    #: registered, exactly, as a redirect URL for the application.
+    bank_sync_redirect_url: str = "http://localhost:3000/accounts/bank/callback"
+    bank_sync_country: str = "GB"
+
 
 settings = Settings()

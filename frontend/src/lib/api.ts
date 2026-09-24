@@ -544,6 +544,60 @@ export interface RulePreviewRow {
   skipped: string | null;
 }
 
+export interface BankStatus {
+  enabled: boolean;
+  provider: string;
+  country: string;
+  redirect_url: string;
+}
+
+export interface BankInstitution {
+  name: string;
+  country: string;
+  logo: string | null;
+}
+
+export interface BankLink {
+  id: string;
+  name: string;
+  identifier: string | null;
+  currency: string;
+  account_id: string | null;
+  last_synced_at: string | null;
+  synced_through: string | null;
+  bank_balance_minor: Minor | null;
+  bank_balance_at: string | null;
+}
+
+export interface BankConnection {
+  id: string;
+  bank: string;
+  country: string;
+  status: "pending" | "active" | "expired" | "revoked";
+  valid_until: string | null;
+  links: BankLink[];
+}
+
+export interface BankSyncResult {
+  staged: number;
+  already_seen: number;
+  pending_skipped: number;
+  foreign_skipped: number;
+  batch_id: string | null;
+}
+
+export const getBankStatus = () => get<BankStatus>("/bank/status");
+export const getBankConnections = () => get<BankConnection[]>("/bank/connections");
+export const getBankInstitutions = () => get<BankInstitution[]>("/bank/institutions");
+export const connectBank = (bank: string) => post<{ connection_id: string; url: string }>("/bank/connections", { bank });
+export const completeBankConnection = (code: string, state: string) =>
+  post<BankConnection>("/bank/callback", { code, state });
+export const mapBankLink = (linkId: string, accountId: string | null) =>
+  patch<BankConnection>(`/bank/links/${linkId}`, { account_id: accountId });
+export const syncBankLink = (linkId: string) => post<BankSyncResult>(`/bank/links/${linkId}/sync`, {});
+export const disconnectBank = (connectionId: string) =>
+  post<BankConnection>(`/bank/connections/${connectionId}/disconnect`, {});
+
 export const getRules = () => get<Rule[]>("/rules");
 export const createRule = (input: RuleInput) => post<Rule>("/rules", input);
 export const updateRule = (id: string, input: RuleInput) => patch<Rule>(`/rules/${id}`, input);

@@ -134,3 +134,13 @@ class RuleDirection(enum.StrEnum):
     ANY = "any"
     OUT = "out"
     IN = "in"
+
+
+class BankConnectionStatus(enum.StrEnum):
+    #: Consent requested; the person has not come back from the bank yet.
+    PENDING = "pending"
+    ACTIVE = "active"
+    #: The bank's consent ran out (UK consents last at most 90 days).
+    EXPIRED = "expired"
+    #: Disconnected by the person. Kept, not deleted: its rows are history.
+    REVOKED = "revoked"

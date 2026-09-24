@@ -5,6 +5,7 @@ from app.models.enums import (
     NOMINAL_KINDS,
     PROTECTED_BY_DEFAULT,
     AccountKind,
+    BankConnectionStatus,
     BudgetPeriod,
     CandidateStatus,
     CategoryNature,
@@ -17,6 +18,7 @@ from app.models.enums import (
     TransactionClass,
     TransactionStatus,
 )
+from app.models.bank import BankConnection, BankLink
 from app.models.enrichment import MerchantSuggestion
 from app.models.imports import ImportBatch, ImportCandidate
 from app.models.ledger import Account, Category, Posting, Transaction
@@ -35,7 +37,7 @@ from app.models.planning import (
 
 __all__ = [
     "ASSET_KINDS", "LIQUID_KINDS", "NOMINAL_KINDS", "PROTECTED_BY_DEFAULT",
-    "Account", "AccountKind", "CategorisationRule", "Base", "Budget", "BudgetPeriod", "BudgetRevision", "Category",
+    "Account", "AccountKind", "BankConnection", "BankConnectionStatus", "BankLink", "CategorisationRule", "Base", "Budget", "BudgetPeriod", "BudgetRevision", "Category",
     "CandidateStatus", "CategoryNature", "ExpectedIncome", "FutureObligation", "GoalContribution",
     "GoalPriority", "ImportBatch", "ImportCandidate", "MerchantSuggestion", "Money", "ObligationInstance", "Posting", "RolloverPolicy", "RuleDirection", "RuleField", "RuleMatch",
     "SavingsGoal", "Scenario", "SuggestionSource", "TimestampedUUID", "Transaction", "TransactionClass",

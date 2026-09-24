@@ -547,15 +547,7 @@ def stage(
     Enforces M3 by hashing the file first: the same statement uploaded twice is
     refused before parsing, which is the common case rather than the exotic one.
     """
-    account = session.get(Account, account_id)
-    if account is None:
-        raise ImportError_("That account does not exist.")
-    if account.kind not in {AccountKind.CURRENT, AccountKind.CASH,
-                            AccountKind.SAVINGS, AccountKind.LIABILITY}:
-        raise ImportError_(
-            f"{account.name} is a {account.kind.value} account. Statements are "
-            "imported into an account money actually sits in."
-        )
+    importable_account(session, account_id)
 
     digest = hashlib.sha256(content.encode("utf-8")).hexdigest()
     existing = session.scalars(
@@ -568,6 +560,53 @@ def stage(
         )
 
     profile, rows = parse(content)
+    return stage_rows(
+        session,
+        filename=filename,
+        digest=digest,
+        profile_name=profile.name,
+        account_id=account_id,
+        rows=rows,
+        enrich=enrich,
+        model_features=model_features,
+        duplicate_checker=duplicate_checker,
+    )
+
+
+#: Where a statement row can land: accounts money actually sits in.
+IMPORTABLE_KINDS = {AccountKind.CURRENT, AccountKind.CASH, AccountKind.SAVINGS, AccountKind.LIABILITY}
+
+
+def importable_account(session: Session, account_id) -> Account:
+    account = session.get(Account, account_id)
+    if account is None:
+        raise ImportError_("That account does not exist.")
+    if account.kind not in IMPORTABLE_KINDS:
+        raise ImportError_(
+            f"{account.name} is a {account.kind.value} account. Statements are "
+            "imported into an account money actually sits in."
+        )
+    return account
+
+
+def stage_rows(
+    session: Session,
+    *,
+    filename: str,
+    digest: str,
+    profile_name: str,
+    account_id,
+    rows: list[ParsedRow],
+    enrich: bool = True,
+    model_features: bool = True,
+    duplicate_checker: DuplicateChecker | None = None,
+) -> ImportBatch:
+    """Stage already-parsed rows as one batch of candidates.
+
+    The single path every source takes -- a statement file, a bank sync -- so
+    duplicate detection, rules, enrichment and intra-batch duplicates behave
+    identically whatever the rows came from. Writes nothing to the ledger.
+    """
     verdicts = classify_duplicates(
         session, account_id, rows, duplicate_checker=duplicate_checker
     )
@@ -576,7 +615,7 @@ def stage(
         filename=filename,
         content_hash=digest,
         account_id=account_id,
-        profile=profile.name,
+        profile=profile_name,
         row_count=len(rows),
     )
     session.add(batch)

@@ -1,14 +1,19 @@
 import { AccountsSection, CategoriesSection } from "@/components/AccountManager";
 import { AppShell } from "@/components/AppShell";
+import { BankManager } from "@/components/BankManager";
 import { RuleManager } from "@/components/RuleManager";
 import { SetupChecklist } from "@/components/SetupChecklist";
 import { PageTabs } from "@/components/ui";
 import { requireSession } from "@/lib/guard";
 import {
   getAccounts,
+  getBankConnections,
+  getBankStatus,
   getCategories,
   getRules,
   type Account,
+  type BankConnection,
+  type BankStatus,
   type Category,
   type Rule,
 } from "@/lib/api";
@@ -20,6 +25,7 @@ const TABS = [
   { key: "accounts", label: "Accounts" },
   { key: "categories", label: "Categories" },
   { key: "rules", label: "Rules" },
+  { key: "bank", label: "Bank" },
 ] as const;
 
 type Tab = (typeof TABS)[number]["key"];
@@ -50,9 +56,14 @@ export default async function AccountsPage({ searchParams }: { searchParams: Pro
   let accounts: Account[] = [];
   let categories: Category[] = [];
   let rules: Rule[] = [];
+  let bankStatus: BankStatus | null = null;
+  let connections: BankConnection[] = [];
   let error: string | null = null;
   try {
     [accounts, categories, rules] = await Promise.all([getAccounts(), getCategories(), getRules()]);
+    if (tab === "bank") {
+      [bankStatus, connections] = await Promise.all([getBankStatus(), getBankConnections()]);
+    }
   } catch (e) {
     error = e instanceof Error ? e.message : "Unknown error";
   }
@@ -102,6 +113,9 @@ export default async function AccountsPage({ searchParams }: { searchParams: Pro
             {tab === "categories" && <CategoriesSection categories={categories} />}
             {tab === "rules" && (
               <RuleManager rules={rules} categories={categories} accounts={accounts} prefill={prefill} />
+            )}
+            {tab === "bank" && bankStatus && (
+              <BankManager status={bankStatus} connections={connections} accounts={accounts} />
             )}
           </>
         )}
