@@ -17,6 +17,7 @@ from app.api.obligation_routes import router as obligation_router
 from app.api.routes import router
 from app.api.import_routes import router as import_router
 from app.api.rule_routes import router as rule_router
+from app.api.plan_routes import router as plan_router
 from app.api.insight_routes import router as insight_router
 from app.api.scenario_routes import router as scenario_router
 from app import scheduler
@@ -92,6 +93,7 @@ app.include_router(backup_router, prefix="/api", dependencies=[Depends(require_s
 app.include_router(debt_router, prefix="/api", dependencies=[Depends(require_session)])
 app.include_router(allocation_router, prefix="/api", dependencies=[Depends(require_session)])
 app.include_router(rule_router, prefix="/api", dependencies=[Depends(require_session)])
+app.include_router(plan_router, prefix="/api", dependencies=[Depends(require_session)])
 
 
 

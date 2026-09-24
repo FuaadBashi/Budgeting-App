@@ -60,6 +60,28 @@ def build_rule(frequency: Frequency, anchor: date) -> str:
     raise ValueError(f"unsupported frequency: {frequency}")
 
 
+def frequency_of(rule: str | None) -> Frequency | None:
+    """The frequency ``build_rule`` made this rule from; None for a one-off.
+
+    Rules are only ever built from a frequency by the server, so the mapping
+    back is exact. A rule written by hand (a restored or seeded row) that does
+    not come from ``build_rule`` raises rather than being guessed at.
+    """
+    if not rule:
+        return None
+    parts = dict(part.split("=", 1) for part in rule.split(";"))
+    freq, interval = parts.get("FREQ"), parts.get("INTERVAL", "1")
+    if freq == "DAILY":
+        return Frequency.DAILY
+    if freq == "WEEKLY":
+        return Frequency.FORTNIGHTLY if interval == "2" else Frequency.WEEKLY
+    if freq == "MONTHLY":
+        return Frequency.QUARTERLY if interval == "3" else Frequency.MONTHLY
+    if freq == "YEARLY":
+        return Frequency.ANNUAL
+    raise ValueError(f"not a rule build_rule makes: {rule}")
+
+
 def _monthly(day: int, interval: int = 1) -> str:
     prefix = f"FREQ=MONTHLY;INTERVAL={interval};" if interval != 1 else "FREQ=MONTHLY;"
     if day <= 28:

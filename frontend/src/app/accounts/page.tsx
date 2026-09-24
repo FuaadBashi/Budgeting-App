@@ -1,8 +1,8 @@
-import Link from "next/link";
 import { AccountsSection, CategoriesSection } from "@/components/AccountManager";
 import { AppShell } from "@/components/AppShell";
 import { RuleManager } from "@/components/RuleManager";
 import { SetupChecklist } from "@/components/SetupChecklist";
+import { PageTabs } from "@/components/ui";
 import { requireSession } from "@/lib/guard";
 import {
   getAccounts,
@@ -75,35 +75,16 @@ export default async function AccountsPage({ searchParams }: { searchParams: Pro
           </p>
         </header>
 
-        <nav
-          aria-label="Accounts sections"
-          className="flex gap-1 overflow-x-auto rounded-[var(--radius-sm)] p-1"
-          style={{ background: "var(--surface-2)" }}
-        >
-          {TABS.map((t) => {
-            const current = t.key === tab;
-            return (
-              <Link
-                key={t.key}
-                href={t.key === "accounts" ? "/accounts" : `/accounts?tab=${t.key}`}
-                aria-current={current ? "page" : undefined}
-                className="min-h-9 flex-1 whitespace-nowrap rounded-[var(--radius-sm)] px-3 py-2 text-center text-sm font-medium"
-                style={
-                  current
-                    ? { background: "var(--surface-1)", color: "var(--text-primary)", boxShadow: "var(--shadow-raised)" }
-                    : { color: "var(--text-secondary)" }
-                }
-              >
-                {t.label}
-                {t.key === "rules" && rules.length > 0 && (
-                  <span className="tnum ml-1.5 text-xs" style={{ color: "var(--text-muted)" }}>
-                    {rules.filter((r) => r.active).length}
-                  </span>
-                )}
-              </Link>
-            );
-          })}
-        </nav>
+        <PageTabs
+          label="Accounts sections"
+          current={tab}
+          tabs={TABS.map((t) => ({
+            key: t.key,
+            label: t.label,
+            href: t.key === "accounts" ? "/accounts" : `/accounts?tab=${t.key}`,
+            count: t.key === "rules" ? rules.filter((r) => r.active).length : undefined,
+          }))}
+        />
 
         {error ? (
           <div className="card p-5 text-sm">

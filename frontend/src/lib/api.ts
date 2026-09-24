@@ -902,6 +902,61 @@ export interface CalendarMonth {
   days: MonthDay[];
 }
 
+export type Frequency = "daily" | "weekly" | "fortnightly" | "monthly" | "quarterly" | "annual";
+
+export interface Income {
+  id: string;
+  name: string;
+  amount_minor: Minor;
+  first_expected_date: string;
+  frequency: Frequency | null;
+  next_date: string | null;
+  account_id: string | null;
+  active: boolean;
+}
+
+export const getIncome = () => get<Income[]>("/income");
+export const createIncome = (body: {
+  name: string;
+  amount_minor: Minor;
+  first_expected_date: string;
+  frequency: Frequency | null;
+  account_id: string | null;
+}) => post<Income>("/income", body);
+export const updateIncome = (id: string, body: Partial<Pick<Income, "name" | "amount_minor" | "account_id" | "active">>) =>
+  patch<Income>(`/income/${id}`, body);
+
+export interface PlanLine {
+  kind: "income" | "bill" | "budget" | "goal";
+  id: string | null;
+  name: string;
+  amount_minor: Minor;
+  counted: boolean;
+  note: string;
+  when: string | null;
+  /** What an inline edit replaces: a budget's per-period amount, or a goal's monthly contribution. */
+  edit_amount_minor: Minor | null;
+  period: string | null;
+}
+
+export interface MonthPlan {
+  start: string;
+  end: string;
+  today: string;
+  editable: boolean;
+  income_planned_minor: Minor;
+  income_received_minor: Minor;
+  bills_minor: Minor;
+  budgets_minor: Minor;
+  goals_minor: Minor;
+  assigned_minor: Minor;
+  unassigned_minor: Minor;
+  lines: PlanLine[];
+}
+
+export const getMonthPlan = (month?: string) =>
+  get<MonthPlan>(`/plan/month${month ? `?month=${encodeURIComponent(month)}` : ""}`);
+
 /** `month` is YYYY-MM. */
 export const getCalendarMonth = (month: string) =>
   get<CalendarMonth>(`/dashboard/calendar/month?month=${encodeURIComponent(month)}`);

@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { ButtonHTMLAttributes, ReactNode } from "react";
 
 /**
@@ -110,3 +111,50 @@ export function ErrorLine({ children }: { children: ReactNode }) {
     </p>
   );
 }
+
+/**
+ * Sub-views of one screen, as links rather than client state, so each view has
+ * a URL: it survives a reload, can be linked to, and works before JavaScript.
+ */
+export function PageTabs({
+  label,
+  tabs,
+  current,
+}: {
+  label: string;
+  tabs: { key: string; label: string; href: string; count?: number }[];
+  current: string;
+}) {
+  return (
+    <nav
+      aria-label={label}
+      className="flex gap-1 overflow-x-auto rounded-[var(--radius-sm)] p-1"
+      style={{ background: "var(--surface-2)" }}
+    >
+      {tabs.map((t) => {
+        const active = t.key === current;
+        return (
+          <Link
+            key={t.key}
+            href={t.href}
+            aria-current={active ? "page" : undefined}
+            className="min-h-9 flex-1 whitespace-nowrap rounded-[var(--radius-sm)] px-3 py-2 text-center text-sm font-medium"
+            style={
+              active
+                ? { background: "var(--surface-1)", color: "var(--text-primary)", boxShadow: "var(--shadow-raised)" }
+                : { color: "var(--text-secondary)" }
+            }
+          >
+            {t.label}
+            {t.count !== undefined && t.count > 0 && (
+              <span className="tnum ml-1.5 text-xs" style={{ color: "var(--text-muted)" }}>
+                {t.count}
+              </span>
+            )}
+          </Link>
+        );
+      })}
+    </nav>
+  );
+}
+
