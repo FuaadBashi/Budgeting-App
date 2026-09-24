@@ -439,7 +439,52 @@ def void_transaction(
 #: Refused by name rather than dropped. Naming them lets the reply say what to do
 #: instead, which an unknown-key rejection cannot.
 MONETARY_FIELDS = ("amount", "amount_minor", "booking_date", "postings")
-EDITABLE_FIELDS = ("description", "merchant", "category_id")
+EDITABLE_FIELDS = ("description", "merchant", "category_id", "leg_categories")
+
+
+def _apply_leg_categories(session, txn, kinds, payload, sent) -> None:
+    """Recategorise a split leg by leg.
+
+    Every refusal is checked before anything is written, so a payload that is
+    partly wrong changes nothing -- applying the valid half and reporting the
+    rest would leave the split in a state the person never chose.
+    """
+    if "category_id" in sent:
+        raise HTTPException(
+            status_code=422,
+            detail="send category_id or leg_categories, not both -- they would disagree",
+        )
+    legs = payload.leg_categories or []
+    if not legs:
+        raise HTTPException(status_code=422, detail="leg_categories is empty")
+
+    by_id = {p.id: p for p in txn.postings}
+    seen: set[uuid.UUID] = set()
+    for leg in legs:
+        if leg.posting_id in seen:
+            raise HTTPException(
+                status_code=422, detail=f"posting {leg.posting_id} is listed twice"
+            )
+        seen.add(leg.posting_id)
+        posting = by_id.get(leg.posting_id)
+        if posting is None:
+            raise HTTPException(
+                status_code=422,
+                detail=f"posting {leg.posting_id} is not part of this transaction",
+            )
+        if kinds.get(posting.account_id) != AccountKind.EXPENSE:
+            raise HTTPException(
+                status_code=422,
+                detail=(
+                    f"posting {leg.posting_id} is not an expense leg; a category "
+                    "describes spending, and this leg moves money between accounts"
+                ),
+            )
+        if leg.category_id is not None and session.get(Category, leg.category_id) is None:
+            raise HTTPException(status_code=422, detail=f"unknown category {leg.category_id}")
+
+    for leg in legs:
+        by_id[leg.posting_id].category_id = leg.category_id
 
 
 @router.patch("/transactions/{transaction_id}", response_model=TransactionOut)
@@ -508,8 +553,8 @@ def edit_transaction(
                 status_code=422,
                 detail=(
                     f"this transaction has {len(expense_legs)} expense legs, so one "
-                    "category_id does not say which of them to recategorise; "
-                    "re-enter the split rather than have the server choose"
+                    "category_id does not say which of them to recategorise; send "
+                    "leg_categories naming each leg rather than have the server choose"
                 ),
             )
         if (
@@ -520,6 +565,9 @@ def edit_transaction(
                 status_code=422, detail=f"unknown category {payload.category_id}"
             )
         expense_legs[0].category_id = payload.category_id
+
+    if "leg_categories" in sent:
+        _apply_leg_categories(session, txn, kinds, payload, sent)
 
     if "description" in sent:
         txn.description = payload.description

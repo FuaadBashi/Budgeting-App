@@ -44,12 +44,15 @@ export function TransactionList({
   showVoided,
   categories,
   expenseAccountIds,
+  accountNames,
 }: {
   transactions: Transaction[];
   showVoided: boolean;
   categories: Category[];
   /** Which legs a category describes: Spent is defined on expense accounts. */
   expenseAccountIds: string[];
+  /** Names each leg of a split in the edit form. */
+  accountNames: Record<string, string>;
 }) {
   const router = useRouter();
   const [busy, setBusy] = useState<string | null>(null);
@@ -100,6 +103,7 @@ export function TransactionList({
                   txn={txn}
                   categories={categories}
                   expenseLegs={txn.postings.filter((p) => expense.has(p.account_id))}
+                  accountNames={accountNames}
                   onDone={() => setEditing(null)}
                 />
               </li>
@@ -231,11 +235,13 @@ function EditRow({
   txn,
   categories,
   expenseLegs,
+  accountNames,
   onDone,
 }: {
   txn: Transaction;
   categories: Category[];
   expenseLegs: Transaction["postings"];
+  accountNames: Record<string, string>;
   onDone: () => void;
 }) {
   const router = useRouter();
@@ -258,6 +264,13 @@ function EditRow({
     if (leg) {
       const category = String(form.get("category_id") ?? "") || null;
       if (category !== (leg.category_id ?? null)) edit.category_id = category;
+    } else if (expenseLegs.length > 1) {
+      // Only the legs that changed, each named, so the server never guesses.
+      const changed = expenseLegs
+        .map((p) => ({ posting_id: p.id, category_id: String(form.get(`leg-${p.id}`) ?? "") || null, was: p.category_id ?? null }))
+        .filter((p) => p.category_id !== p.was)
+        .map(({ posting_id, category_id }) => ({ posting_id, category_id }));
+      if (changed.length > 0) edit.leg_categories = changed;
     }
     if (Object.keys(edit).length === 0) {
       onDone();
@@ -319,11 +332,26 @@ function EditRow({
             </select>
           </EditField>
         )}
-        {expenseLegs.length > 1 && (
-          <p className="text-xs sm:col-span-2" style={{ color: "var(--text-muted)" }}>
-            Split across {expenseLegs.length} expense lines, so one category would not
-            say which line it means. Re-enter the split to recategorise it.
-          </p>
+        {expenseLegs.length > 1 && categories.length > 0 && (
+          <fieldset className="space-y-2 sm:col-span-2">
+            <legend className="mb-1 text-xs font-medium" style={{ color: "var(--text-secondary)" }}>
+              Split across {expenseLegs.length} lines
+            </legend>
+            {expenseLegs.map((p) => (
+              <label key={p.id} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1 text-xs sm:grid-cols-[minmax(0,1fr)_6rem_minmax(0,1fr)]" style={{ color: "var(--text-secondary)" }}>
+                <span style={{ overflowWrap: "anywhere" }}>{accountNames[p.account_id] ?? "Expense"}</span>
+                <span className="tnum text-right">{formatSignedMinor(-p.amount_minor)}</span>
+                <select name={`leg-${p.id}`} defaultValue={p.category_id ?? ""} className="form-control col-span-2 sm:col-span-1">
+                  <option value="">Uncategorised</option>
+                  {categories.map((category) => (
+                    <option key={category.id} value={category.id}>
+                      {category.name} · {category.nature}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            ))}
+          </fieldset>
         )}
       </div>
 

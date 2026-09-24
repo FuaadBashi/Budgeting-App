@@ -214,6 +214,84 @@ def test_an_ambiguous_category_edit_is_refused_rather_than_guessed(
     assert [p["category_id"] for p in after["postings"]] == [None, None, None]
 
 
+def _split(client, accounts):
+    """£300 out of Current, £250 to Groceries and £50 to Interest."""
+    r = client.post(
+        "/api/transactions",
+        json={
+            "booking_date": "2026-08-15",
+            "description": "Big shop",
+            "postings": [
+                {"account_id": str(accounts["current"].id), "amount_minor": -30_000},
+                {"account_id": str(accounts["groceries"].id), "amount_minor": 25_000},
+                {"account_id": str(accounts["interest"].id), "amount_minor": 5_000},
+            ],
+        },
+    )
+    assert r.status_code == 201, r.text
+    body = r.json()
+    legs = {p["account_id"]: p["id"] for p in body["postings"]}
+    return body["id"], legs
+
+
+def test_a_split_is_recategorised_leg_by_leg(client, accounts, categories):
+    """The answer to the refusal above: name each leg, and the server has
+    nothing left to guess."""
+    txn_id, legs = _split(client, accounts)
+    groceries_leg = legs[str(accounts["groceries"].id)]
+    interest_leg = legs[str(accounts["interest"].id)]
+
+    r = client.patch(
+        f"/api/transactions/{txn_id}",
+        json={
+            "leg_categories": [
+                {"posting_id": groceries_leg, "category_id": str(categories["groceries"].id)},
+                {"posting_id": interest_leg, "category_id": str(categories["rent"].id)},
+            ]
+        },
+    )
+
+    assert r.status_code == 200, r.text
+    by_leg = {p["id"]: p["category_id"] for p in r.json()["postings"]}
+    assert by_leg[groceries_leg] == str(categories["groceries"].id)
+    assert by_leg[interest_leg] == str(categories["rent"].id)
+
+
+@pytest.mark.parametrize(
+    "problem",
+    ["foreign posting", "cash leg", "unknown category", "listed twice", "both fields"],
+)
+def test_a_bad_leg_category_changes_nothing(client, accounts, categories, problem):
+    """All-or-nothing: applying the valid legs and refusing the rest would leave
+    a split categorised in a way nobody chose."""
+    txn_id, legs = _split(client, accounts)
+    good = {
+        "posting_id": legs[str(accounts["groceries"].id)],
+        "category_id": str(categories["groceries"].id),
+    }
+    other_txn = spend(client, accounts, description="Elsewhere")
+    bad = {
+        "foreign posting": {"posting_id": other_txn["postings"][1]["id"], "category_id": None},
+        "cash leg": {"posting_id": legs[str(accounts["current"].id)], "category_id": None},
+        "unknown category": {
+            "posting_id": legs[str(accounts["interest"].id)],
+            "category_id": str(uuid.uuid4()),
+        },
+        "listed twice": good,
+    }
+    body = (
+        {"leg_categories": [good], "category_id": str(categories["groceries"].id)}
+        if problem == "both fields"
+        else {"leg_categories": [good, bad[problem]]}
+    )
+
+    r = client.patch(f"/api/transactions/{txn_id}", json=body)
+
+    assert r.status_code == 422, r.text
+    after = next(t for t in client.get("/api/transactions").json() if t["id"] == txn_id)
+    assert [p["category_id"] for p in after["postings"]] == [None, None, None]
+
+
 def test_a_transfer_cannot_take_a_category(client, accounts, categories):
     """A transfer touches no expense account, so it is not spending and there is
     nothing for a category to describe."""

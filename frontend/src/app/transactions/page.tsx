@@ -103,6 +103,7 @@ export default async function TransactionsPage({
   const hasOlder = transactions.length > PAGE_SIZE;
   transactions = transactions.slice(0, PAGE_SIZE);
   const expenseAccountIds = accounts.filter((a) => a.kind === "expense").map((a) => a.id);
+  const accountNames = Object.fromEntries(accounts.map((a) => [a.id, a.name]));
 
   // Every other filter survives paging; only the page number changes.
   function pageHref(target: number): string {
@@ -168,6 +169,7 @@ export default async function TransactionsPage({
               showVoided={showVoided}
               categories={categories}
               expenseAccountIds={expenseAccountIds}
+              accountNames={accountNames}
             />
             {(page > 1 || hasOlder) && (
               <nav className="flex items-center justify-between text-sm" aria-label="Pages">

@@ -126,6 +126,15 @@ class TransactionIn(BaseModel):
         return v
 
 
+class LegCategoryIn(BaseModel):
+    """One expense leg of a split and the category it should carry."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    posting_id: uuid.UUID
+    category_id: uuid.UUID | None = None
+
+
 class TransactionEditIn(BaseModel):
     """A non-monetary correction, rulebook section 2.
 
@@ -145,6 +154,9 @@ class TransactionEditIn(BaseModel):
     #: transaction's expense leg. Null clears it -- untagged spend is a real
     #: state, reported by its own breakdown term.
     category_id: uuid.UUID | None = None
+    #: For a split, where one ``category_id`` cannot say which leg it means.
+    #: Each entry names a posting of this transaction's own expense legs.
+    leg_categories: list[LegCategoryIn] | None = None
 
     #: Declared only so the route can refuse them by name and say what to do
     #: instead. Left undeclared they would be rejected as unknown keys, which

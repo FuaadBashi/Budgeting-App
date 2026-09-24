@@ -12,9 +12,14 @@ import {
   type Category,
 } from "@/lib/api";
 import { useDesign } from "@/lib/design";
-import { parseMajorToMinor } from "@/lib/money";
+import { formatMinor, parseMajorToMinor } from "@/lib/money";
 
 type EntryKind = "expense" | "income" | "transfer" | "refund";
+
+//: One line of a split: its own amount, expense account and category.
+type SplitLine = { key: number; amount: string; accountId: string; categoryId: string };
+
+const blankLine = (key: number): SplitLine => ({ key, amount: "", accountId: "", categoryId: "" });
 
 const REAL_KINDS = new Set([
   "current",
@@ -76,6 +81,17 @@ export function TransactionEntry({
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState(false);
   const [kind, setKind] = useState<EntryKind>("expense");
+  // A split is one payment spread across categories -- a supermarket shop that
+  // was half groceries and half household. Without it the whole receipt had to
+  // go under one category, so one budget over-read and another under-read.
+  const [split, setSplit] = useState(false);
+  const [lines, setLines] = useState<SplitLine[]>(() => [blankLine(1), blankLine(2)]);
+  const splitting = kind === "expense" && split;
+  const splitTotal = lines.reduce((sum, line) => sum + (parseMajorToMinor(line.amount) ?? 0), 0);
+
+  function updateLine(key: number, patch: Partial<SplitLine>) {
+    setLines((current) => current.map((line) => (line.key === key ? { ...line, ...patch } : line)));
+  }
 
   const choices = useMemo(() => accountChoices(accounts, kind), [accounts, kind]);
 
@@ -115,7 +131,15 @@ export function TransactionEntry({
 
   function changeKind(next: EntryKind) {
     setKind(next);
+    if (next !== "expense") setSplit(false);
     setError(null);
+  }
+
+  function resetForm(form: HTMLFormElement) {
+    form.reset();
+    setKind("expense");
+    setSplit(false);
+    setLines([blankLine(1), blankLine(2)]);
   }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
@@ -124,6 +148,12 @@ export function TransactionEntry({
 
     const form = event.currentTarget;
     const data = new FormData(form);
+
+    if (splitting) {
+      await submitSplit(form, data);
+      return;
+    }
+
     const amount = parseMajorToMinor(String(data.get("amount") ?? ""));
     const sourceId = String(data.get("source_account_id") ?? "");
     const destinationId = String(data.get("destination_account_id") ?? "");
@@ -160,12 +190,55 @@ export function TransactionEntry({
           },
         ],
       });
-      form.reset();
-      setKind("expense");
-      setOpen(false);
-      setNotice(true);
-      window.setTimeout(() => setNotice(false), 3200);
-      router.refresh();
+      resetForm(form);
+      recorded();
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "Could not save the transaction.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  function recorded() {
+    setOpen(false);
+    setNotice(true);
+    window.setTimeout(() => setNotice(false), 3200);
+    router.refresh();
+  }
+
+  async function submitSplit(form: HTMLFormElement, data: FormData) {
+    const sourceId = String(data.get("source_account_id") ?? "");
+    if (!sourceId) {
+      setError("Choose the account the money came from.");
+      return;
+    }
+    const parsed = lines.map((line) => ({ ...line, minor: parseMajorToMinor(line.amount) }));
+    const bad = parsed.findIndex((line) => line.minor === null || line.minor <= 0 || !line.accountId);
+    if (bad !== -1) {
+      setError(`Line ${bad + 1} needs a positive amount and an expense account.`);
+      return;
+    }
+    const total = parsed.reduce((sum, line) => sum + line.minor!, 0);
+
+    setSaving(true);
+    try {
+      await createTransaction({
+        booking_date: String(data.get("booking_date")),
+        description: String(data.get("description") ?? "").trim(),
+        merchant: String(data.get("merchant") ?? "").trim() || null,
+        // One leg out, one leg in per line: the lines sum to the total by
+        // construction, so the transaction balances without a remainder line.
+        postings: [
+          { account_id: sourceId, amount_minor: -total, category_id: null },
+          ...parsed.map((line) => ({
+            account_id: line.accountId,
+            amount_minor: line.minor!,
+            category_id: line.categoryId || null,
+          })),
+        ],
+      });
+      resetForm(form);
+      recorded();
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "Could not save the transaction.");
     } finally {
@@ -284,24 +357,86 @@ export function TransactionEntry({
                   <Field label="Date">
                     <input name="booking_date" type="date" required defaultValue={localDate()} autoFocus className="form-control" />
                   </Field>
-                  <Field label="Amount">
-                    <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm" style={{ color: "var(--text-muted)" }}>£</span>
-                      <input name="amount" type="text" inputMode="decimal" placeholder="0.00" required pattern="[0-9]+([.][0-9]{1,2})?" className="form-control pl-7 tnum" />
+                  {splitting ? (
+                    <div className="block text-sm font-medium" style={{ color: "var(--text-secondary)" }}>
+                      <span className="mb-1.5 block">Total</span>
+                      <output className="form-control tnum flex items-center" aria-live="polite" style={{ color: "var(--text-primary)" }}>
+                        {formatMinor(splitTotal)}
+                      </output>
                     </div>
-                  </Field>
+                  ) : (
+                    <Field label="Amount">
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm" style={{ color: "var(--text-muted)" }}>£</span>
+                        <input name="amount" type="text" inputMode="decimal" placeholder="0.00" required pattern="[0-9]+([.][0-9]{1,2})?" className="form-control pl-7 tnum" />
+                      </div>
+                    </Field>
+                  )}
                 </div>
 
                 <div className="grid gap-4 sm:grid-cols-2">
                   <Field label={sourceLabel}>
                     <AccountSelect key={`${kind}-source`} name="source_account_id" accounts={choices.source} />
                   </Field>
-                  <Field label={destinationLabel}>
-                    <AccountSelect key={`${kind}-destination`} name="destination_account_id" accounts={choices.destination} />
-                  </Field>
+                  {!splitting && (
+                    <Field label={destinationLabel}>
+                      <AccountSelect key={`${kind}-destination`} name="destination_account_id" accounts={choices.destination} />
+                    </Field>
+                  )}
                 </div>
 
-                {needsCategory && categories.length > 0 && (
+                {kind === "expense" && (
+                  <label className="flex items-center gap-2 text-sm" style={{ color: "var(--text-secondary)" }}>
+                    <input type="checkbox" checked={split} onChange={(e) => setSplit(e.target.checked)} className="h-4 w-4 accent-[var(--accent)]" />
+                    Split across categories
+                  </label>
+                )}
+
+                {splitting && (
+                  <fieldset className="space-y-2">
+                    <legend className="sr-only">Split lines</legend>
+                    {lines.map((line, index) => (
+                      <div key={line.key} className="grid grid-cols-[6.5rem_minmax(0,1fr)] gap-2 rounded-[var(--radius-sm)] p-2 sm:grid-cols-[6.5rem_minmax(0,1fr)_minmax(0,1fr)_auto]" style={{ background: "var(--surface-2)" }}>
+                        <div className="relative">
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm" style={{ color: "var(--text-muted)" }} aria-hidden>£</span>
+                          <input value={line.amount} onChange={(e) => updateLine(line.key, { amount: e.target.value })} inputMode="decimal" placeholder="0.00" aria-label={`Line ${index + 1} amount`} className="form-control pl-7 tnum" />
+                        </div>
+                        <select value={line.accountId} onChange={(e) => updateLine(line.key, { accountId: e.target.value })} aria-label={`Line ${index + 1} expense account`} className="form-control">
+                          <option value="" disabled>Expense account</option>
+                          {choices.destination.map((account) => (
+                            <option key={account.id} value={account.id}>{account.name}</option>
+                          ))}
+                        </select>
+                        <select value={line.categoryId} onChange={(e) => updateLine(line.key, { categoryId: e.target.value })} aria-label={`Line ${index + 1} category`} className="form-control col-span-2 sm:col-span-1">
+                          <option value="">Uncategorised</option>
+                          {categories.map((category) => (
+                            <option key={category.id} value={category.id}>{category.name}</option>
+                          ))}
+                        </select>
+                        <button
+                          type="button"
+                          onClick={() => setLines((current) => current.filter((l) => l.key !== line.key))}
+                          disabled={lines.length <= 2}
+                          aria-label={`Remove line ${index + 1}`}
+                          className="col-span-2 min-h-9 rounded-full px-3 text-xs disabled:opacity-40 sm:col-span-1"
+                          style={{ color: "var(--text-secondary)", boxShadow: "inset 0 0 0 1px var(--hairline-strong)" }}
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    ))}
+                    <button
+                      type="button"
+                      onClick={() => setLines((current) => [...current, blankLine(Math.max(...current.map((l) => l.key)) + 1)])}
+                      className="min-h-9 rounded-full px-3 text-xs"
+                      style={{ color: "var(--text-secondary)", boxShadow: "inset 0 0 0 1px var(--hairline-strong)" }}
+                    >
+                      Add a line
+                    </button>
+                  </fieldset>
+                )}
+
+                {needsCategory && !splitting && categories.length > 0 && (
                   <Field label="Category" optional>
                     <select name="category_id" className="form-control" defaultValue="">
                       <option value="">Uncategorised</option>

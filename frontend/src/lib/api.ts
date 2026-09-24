@@ -817,6 +817,8 @@ export interface TransactionEdit {
   description?: string;
   merchant?: string | null;
   category_id?: string | null;
+  /** For a split: each expense leg by posting id. Not combinable with category_id. */
+  leg_categories?: { posting_id: string; category_id: string | null }[];
 }
 
 export const editTransaction = (id: string, edit: TransactionEdit) =>
