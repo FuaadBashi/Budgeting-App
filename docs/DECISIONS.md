@@ -415,3 +415,28 @@ the previous failure's messages were still sitting in the buffer, until testing
 moved to a genuinely fresh tab each time. The `useLayoutEffect` approach above
 was chosen once the blocking-script family of fixes was confirmed broken at the
 framework level, not because it is the better pattern in principle.
+
+## Audit fixes: navigation, accent text, first run. Decided 24 September 2026
+
+**The phone bar is Dashboard, Transactions, Budgets, Calendar and More.** Ten tabs
+in 390px gave each 39px, ran the labels together and put Data off-screen. The four
+are the screens reached daily: the headline figures, the thing just spent, whether
+it fits, and what is due. Everything else, Accounts included, sits one tap away in
+More, which lights up when the current screen is inside it.
+
+**Text on the accent is dark in most palettes, and that is deliberate.** White on
+Vault Noir's brass is 2.43:1, and white clears 4.5:1 only on Field Ledger light's
+rust. Rather than darken each accent, which would dull the thing each design is
+recognised by, every palette gains `--on-accent`: its own page or ink colour where
+that passes, otherwise the lightest near-black in its hue that does. A guard test
+holds all thirteen blocks to AA and refuses a fixed label colour on the accent.
+
+**Accounts earned an eleventh nav item.** A setup link on the dashboard alone would
+have fixed the first run and then hidden the screen from anyone adding a credit card
+a year later. Field Ledger's masthead paid for the extra link: its title now shows
+only at `xl`. Estimated from label widths rather than measured, eleven links plus
+the title need about 1,270px at the old spacing, more than a 1024px screen has.
+
+**The audit's tenth finding, adopt one design, is not decided here.** It asks for
+four directions to become one, which reverses the entry above and the motion work
+set as the next task on 2 September. That is the owner's call, not a fix.

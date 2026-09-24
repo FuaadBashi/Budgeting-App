@@ -22,24 +22,32 @@ it is the contract, and where code disagrees with it that is a defect, not a var
 | 10 | Polish, backups, hosting | ◐ backups and exposure hardening done; the deploy itself is yours |
 | 11 | Assisted categorisation (LLM) | ✅ |
 
-**Phases 0–9 and 11 complete; Phase 10's backup half is done.** 824 tests. Deployment is the
+**Phases 0–9 and 11 complete; Phase 10's backup half is done.** 836 tests. Deployment is the
 only substantial thing left from the original plan, and `docs/RUNNING.md` already describes the
 setup worth having (Tailscale, real certificates, nothing exposed to the internet) — but see
 "Recommended next task" below, which is not that.
 
-Frontend has ten screens — dashboard, transactions, analytics, insights, budgets, calendar,
-goals, simulator, import and data — and every nav item is live. Budgets, goals and commitments can all be created and edited from the UI.
+Frontend has eleven screens — dashboard, transactions, accounts, analytics, insights, budgets,
+calendar, goals, simulator, import and data — and every nav item is live. Accounts, categories,
+budgets, goals and commitments can all be created from the UI; a fresh install lands on a setup
+checklist rather than a dashboard of zeros.
 The Add button records expenses, income, transfers/debt payments and refunds as balanced two-leg
 transactions. The transactions screen
 lists history, shows each row's effect on liquid cash, and offers both correction paths: Void
 for a wrong amount or date, edit-in-place for a wrong description, merchant or category. Voided
-rows are hidden by default and never deleted.
+rows are hidden by default and never deleted. The list pages through all of history, 100 rows at
+a time.
+
+**A UX audit's ten top findings were worked through on 24 September 2026** (nine fixed, one — adopt a
+single design — left as a decision; see §4). The ones worth knowing: the phone bar is four tabs
+plus More, the gear lives inside the rail in Vault Noir and Command Ledger, every chart answers
+tap and arrow keys as well as hover, and text on the accent colour comes from `--on-accent`.
 
 **A visual design system landed 2 September 2026.** Four complete design directions — Vault Noir,
 Field Ledger, Raw Ledger, Command Ledger, each with its own light and dark palette (eight
 palettes total) and its own desktop nav treatment (icon rail / masthead / floating dock / rail
-plus a functional jump-to bar) — are switchable from a Preferences control (the gear icon,
-bottom-left, on every screen) and persist across reloads. See "Frontend" below for where the
+plus a functional jump-to bar) — are switchable from a Preferences control (the gear icon: inside the icon rail in Vault Noir and
+Command Ledger on desktop, bottom-left everywhere else) and persist across reloads. See "Frontend" below for where the
 system lives, and `docs/DECISIONS.md` for why it is built the way it is, including two real bugs
 found and fixed along the way that are worth reading before touching `lib/design.tsx` again.
 
@@ -110,7 +118,8 @@ where something lives.
 | File | Screen |
 |---|---|
 | `app/page.tsx` | Dashboard — the four KPI tiles, the projected balance curve, budget cards |
-| `app/transactions/page.tsx` | History, void, edit-in-place |
+| `app/transactions/page.tsx` | History, void, edit-in-place, Older/Newer paging |
+| `app/accounts/page.tsx` | Accounts by kind with balances, categories, creating both; the setup checklist |
 | `app/analytics/page.tsx` | Period and monthly summaries, category bars |
 | `app/insights/page.tsx` | Observations with evidence, including merchant anomalies |
 | `app/budgets/page.tsx` | Budget list/create/edit, account default categories, this period's cards |
@@ -127,8 +136,10 @@ where something lives.
 
 | File | Responsibility |
 |---|---|
-| `AppShell.tsx` | Nav chrome for all four designs (rail / masthead / dock / rail+command-bar); mobile top bar and bottom tabs, identical across designs |
-| `PreferencesPanel.tsx` | The gear-icon control: pick a design, pick System/Light/Dark |
+| `AppShell.tsx` | Nav chrome for all four designs (rail / masthead / dock / rail+command-bar); mobile top bar and bottom tabs (four plus a More sheet), identical across designs |
+| `PreferencesPanel.tsx` | The gear-icon control: pick a design, pick System/Light/Dark. `placement="rail"` puts it inside the icon rail |
+| `AccountManager.tsx` | Account and category lists and creation forms; the one line where "amount owed" becomes a negative balance |
+| `SetupChecklist.tsx` | What the ledger still needs before Add can record anything; on the dashboard and Accounts |
 | `StatTile.tsx` | Label + value + optional support/footnote; `lead` marks the one hero figure per screen |
 | `AnimatedAmount.tsx` | Counts a money figure up on mount/change; noir only, gated on `prefers-reduced-motion` |
 | `BudgetCard.tsx` | One budget period: meter, warnings (including merchant anomaly), the "where this comes from" breakdown |
@@ -139,7 +150,7 @@ where something lives.
 | `ObligationManager.tsx` | Commitments list, creation form, inline edit |
 | `ScenarioManager.tsx` | Scenario list, creation, compare, delete |
 | `ScenarioChart.tsx` | The simulator's projection chart (mind the aqua-on-light note in Traps) |
-| `BalanceCurve.tsx` | The dashboard/calendar projected balance chart, hover for day detail |
+| `BalanceCurve.tsx` | The dashboard/calendar projected balance chart; tap, point or arrow keys for day detail |
 | `CategoryBars.tsx` | Spend-by-category ranked bars (Analytics) |
 | `MonthlyBars.tsx` | Month-over-month spend bars (Analytics) |
 | `InsightPanel.tsx` | Renders one `Insight`: title, evidence, action |
@@ -160,6 +171,8 @@ where something lives.
 | `money.ts` | `formatMinor`, `parseMajorToMinor` — minor units at the boundary, never a float |
 | `guard.tsx` | `requireSession()` — server-side auth check every page calls before rendering |
 | `design.tsx` | `DesignProvider`/`useDesign()` — the four-design, light/dark/system state machine. **Read the comment above `DesignProvider` before changing initial-state logic** — it explains two hydration bugs already found there |
+| `setup.ts` | `setupSteps()` — which account kinds the Add form needs, shared by dashboard and Accounts |
+| `chartSelection.ts` | `useChartSelection()` — picking a chart point by mouse, touch, pen or keyboard, for all three charts |
 | `fonts.ts` | `next/font/google` loaders for the four design typefaces (Fraunces, Instrument Serif, Archivo, IBM Plex Mono), exposed as CSS variables |
 
 **The design-token system**, in `globals.css`: every component styles against the same variable
@@ -169,6 +182,10 @@ tokens (radius, border weight, which typeface plays which role) are keyed by `[d
 alone, since they do not change between light and dark. `<html>` carries both attributes, written
 by `DesignProvider` — nowhere else. See `docs/DECISIONS.md`'s design-system entry for why the
 values are what they are and what the four are named.
+
+Text or icons drawn on `--accent` use `--on-accent`, chosen per palette to clear 4.5:1.
+`backend/tests/unit/test_design_tokens.py` fails if a palette lacks it, if it drops below AA, or if a
+component puts a fixed colour on the accent.
 
 ---
 
@@ -333,9 +350,17 @@ each with named tests.
 5. ~~Transaction editing~~ — done. `PATCH /api/transactions/{id}` corrects description,
    merchant and category in place; amount and booking date are refused with a 422 naming the
    void endpoint, because those are the corrections that have to say the money was wrong.
-6. Accounts have no management screen. They are created through the API and seeded; the only
-   account setting the UI reaches is the default category, on the budgets screen. Renaming or
-   archiving one still needs the API.
+6. Accounts can be created on `/accounts`, but not renamed or archived — that still needs the
+   API. Categories can be created; renaming one is a bigger question, because the name is what
+   every past budget breakdown was read under.
+7. **The protected cash buffer has no API or UI.** It lives on `UserProfile` and is set in the
+   database. The dashboard now says when none is set rather than ticking against £0.00.
+8. **Open from the 24 September audit.** Item 10, adopt one design with light and dark and put the
+   effort into flows, is a decision rather than a fix, and cuts against the motion work above. The
+   audit's product gaps are also open: UK Open Banking sync, a rules engine, split entry in the
+   Add form, a month-grid calendar and a zero-based "assign every pound" view. Only the audit's
+   executive summary reached this repo, so its §2–§5 detail (including the full contrast table)
+   has not been worked through.
 
 ### Goal integrity coverage
 
@@ -390,6 +415,13 @@ These are bugs already found and fixed. They will come back if the reasoning is 
 - **The simulator's third series is aqua, which sits under 3:1 on the light surface.** The
   palette's relief rule makes the table toggle in `ScenarioChart` mandatory, not a nicety.
   Removing it breaks the accessibility contract even though nothing will fail to compile.
+- **CSS outside a layer beats every Tailwind utility, whatever the specificity.** `.form-control`
+  was unlayered, so `pl-7` lost to its padding and the £ sign sat on the first digit; `w-24` and
+  `py-1.5` were silently ignored the same way. Component classes go in `@layer components`.
+- **Sorting on a column that can repeat needs the primary key last.** Ties come back in physical
+  row order, which an edit changes. That made backups differ between two exports of the same data
+  (X16 failed intermittently) and made transaction paging repeat some rows and skip others —
+  `created_at` is `now()` for a whole database transaction, so an import batch ties on it.
 - **`Decimal("-7") // Decimal("2")` is `-3`**, while `-7 // 2` is `-4`. Decimal floor division
   truncates toward zero. Never use `//` on money — `floor_money` exists for this.
 - **RFC 5545 skips, it does not clamp.** `BYMONTHDAY=31` drops five months a year.
