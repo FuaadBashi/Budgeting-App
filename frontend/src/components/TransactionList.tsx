@@ -115,7 +115,7 @@ export function TransactionList({
             // Two lines, not one wrapping row. A single flex row let the
             // description column shrink below an unbreakable merchant name,
             // which then drew straight through the amount ("Exp£54.90").
-            <li key={txn.id} className="p-4" style={{ opacity: voided ? 0.5 : 1 }}>
+            <li key={txn.id} className={`p-4 ${voided ? "dimmed" : ""}`}>
               <div className="flex items-baseline gap-3">
                 <span
                   className="hidden w-20 shrink-0 text-xs tnum sm:block"

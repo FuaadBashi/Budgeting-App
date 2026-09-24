@@ -82,3 +82,53 @@ def test_no_component_puts_a_fixed_colour_on_the_accent():
         if fixed.search(path.read_text())
     ]
     assert offenders == []
+
+
+#: Every token the components use as ink, and every surface ink sits on.
+TEXT_TOKENS = (
+    "--text-primary", "--text-secondary", "--text-muted", "--success-text",
+    "--status-critical", "--status-warning", "--status-good", "--accent-text",
+)
+SURFACES = ("--surface-1", "--surface-2", "--page-plane")
+
+
+def test_every_text_token_meets_aa_on_every_surface_in_every_palette():
+    """The audit counted hundreds of axe contrast failures; nearly all traced
+    back to a handful of inks -- muted grey, warning amber, the accent used as
+    text -- falling under 4.5:1 on one surface or another. Fixed at the token,
+    they are fixed everywhere the token is used."""
+    failures = []
+    for selector, tokens in _palettes():
+        for ink in TEXT_TOKENS:
+            for surface in SURFACES:
+                if ink not in tokens:
+                    failures.append(f"{selector}: no {ink}")
+                    continue
+                ratio = _ratio(tokens[ink], tokens[surface])
+                if ratio < AA:
+                    failures.append(f"{selector}: {ink} on {surface} is {ratio:.2f}:1")
+    assert failures == []
+
+
+def test_fill_colours_are_not_used_as_text():
+    """--accent is a button fill and --series-N are chart hues; as ink they sat
+    at 3:1 in several palettes. Text uses --accent-text."""
+    ink = re.compile(r'color: [^,}]*"var\(--(?:accent|series-\d)\)"')
+    offenders = []
+    for path in sorted((FRONTEND_ROOT / "src").rglob("*.tsx")):
+        for line in path.read_text().splitlines():
+            if ink.search(line) and not re.search(r"\b(background|border|fill|stroke)", line):
+                offenders.append(f"{path.relative_to(FRONTEND_ROOT)}: {line.strip()}")
+    assert offenders == []
+
+
+def test_content_is_not_dimmed_with_opacity():
+    """Opacity dims ink below AA; `.dimmed` swaps to the muted ink instead.
+    Opacity on a busy or disabled control is fine and excluded."""
+    dimmed = re.compile(r"opacity: [^,}]*\? (?:0\.\d+|1) : (?:0\.\d+|1)")
+    offenders = []
+    for path in sorted((FRONTEND_ROOT / "src" / "components").rglob("*.tsx")):
+        for line in path.read_text().splitlines():
+            if dimmed.search(line) and not re.search(r"busy|saving|uploading|disabled|!account", line):
+                offenders.append(f"{path.name}: {line.strip()}")
+    assert offenders == []

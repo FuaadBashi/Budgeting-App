@@ -114,7 +114,7 @@ export function PreferencesPanel({
         }
         style={
           rail
-            ? { color: open ? "var(--accent)" : "var(--text-muted)" }
+            ? { color: open ? "var(--accent-text)" : "var(--text-muted)" }
             : {
                 background: "var(--surface-1)",
                 color: "var(--text-secondary)",

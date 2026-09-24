@@ -180,7 +180,7 @@ function DayCell({
         onClick={onSelect}
         onKeyDown={onKeyDown}
         aria-label={label}
-        className="flex aspect-square w-full flex-col rounded-[var(--radius-sm)] p-1 text-left outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] sm:aspect-[4/3] sm:p-1.5"
+        className={`flex aspect-square w-full flex-col rounded-[var(--radius-sm)] p-1 text-left outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] sm:aspect-[4/3] sm:p-1.5 ${beyond ? "dimmed" : ""}`}
         style={{
           background: day.below_buffer
             ? "color-mix(in oklab, var(--status-critical) 14%, var(--surface-1))"
@@ -192,12 +192,11 @@ function DayCell({
             : day.kind === "today"
               ? "inset 0 0 0 1px var(--accent)"
               : "inset 0 0 0 var(--border-w) var(--hairline)",
-          opacity: beyond ? 0.55 : 1,
         }}
       >
         <span
           className="tnum text-xs font-medium"
-          style={{ color: day.kind === "today" ? "var(--accent)" : "var(--text-secondary)" }}
+          style={{ color: day.kind === "today" ? "var(--accent-text)" : "var(--text-secondary)" }}
         >
           {dayOfMonth(day.day)}
         </span>
@@ -268,7 +267,7 @@ function DayDetail({ day, bufferMinor }: { day: MonthDay; bufferMinor: number })
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <h4 className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>
           {title}
-          {day.kind === "today" && <span style={{ color: "var(--accent)" }}> · today</span>}
+          {day.kind === "today" && <span style={{ color: "var(--accent-text)" }}> · today</span>}
         </h4>
         {day.closing_balance_minor !== null && (
           <span className="tnum text-sm" style={{ color: day.below_buffer ? "var(--status-critical)" : "var(--text-secondary)" }}>

@@ -205,7 +205,7 @@ function ConnectionCard({ connection, accounts }: { connection: BankConnection; 
   }
 
   return (
-    <article className="card p-5" style={{ opacity: connection.status === "revoked" ? 0.6 : 1 }}>
+    <article className={`card p-5 ${connection.status === "revoked" ? "dimmed" : ""}`}>
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <h3 className="text-base font-medium" style={{ color: "var(--text-primary)" }}>
           {connection.bank}

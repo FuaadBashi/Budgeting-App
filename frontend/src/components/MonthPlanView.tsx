@@ -237,7 +237,7 @@ function LineSection({
       ) : (
         <ul className="card divide-y" style={{ borderColor: "var(--gridline)" }}>
           {lines.map((line, i) => (
-            <li key={`${line.id}-${line.when}-${i}`} className="p-4" style={{ opacity: line.counted ? 1 : 0.65 }}>
+            <li key={`${line.id}-${line.when}-${i}`} className={`p-4 ${line.counted ? "" : "dimmed"}`}>
               <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
                 <span className="text-sm" style={{ color: "var(--text-primary)", overflowWrap: "anywhere" }}>
                   {line.name}
@@ -441,7 +441,7 @@ function IncomeSection({
         {incomes.length > 0 && (
           <ul className="mt-3 space-y-2 text-sm">
             {incomes.map((income) => (
-              <li key={income.id} className="flex flex-wrap items-center justify-between gap-2" style={{ opacity: income.active ? 1 : 0.6 }}>
+              <li key={income.id} className={`flex flex-wrap items-center justify-between gap-2 ${income.active ? "" : "dimmed"}`}>
                 <span style={{ color: "var(--text-primary)" }}>
                   {income.name}{" "}
                   <span className="tnum text-xs" style={{ color: "var(--text-muted)" }}>

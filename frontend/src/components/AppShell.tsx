@@ -132,7 +132,7 @@ function RailNav({ design }: { design: "noir" | "console" }) {
       {design === "noir" && (
         <div
           className="font-display mb-5 text-sm"
-          style={{ color: "var(--accent)" }}
+          style={{ color: "var(--accent-text)" }}
           aria-hidden
         >
           PFOS
@@ -178,7 +178,7 @@ function RailLink({
   const current = useIsCurrent(item.href);
   const className = `navlink flex h-10 w-10 items-center justify-center rounded-[var(--radius-sm)] ${stagger ? "stagger-in" : ""}`;
   const style: CSSProperties & Record<string, string | number> = current
-    ? { background: "var(--accent-soft)", color: "var(--accent)" }
+    ? { background: "var(--accent-soft)", color: "var(--accent-text)" }
     : { color: "var(--text-muted)" };
   if (stagger) style["--i"] = index;
   const content = numbered ? (
@@ -483,7 +483,7 @@ function MobileNav() {
           aria-expanded={open}
           aria-controls="mobile-more"
           className="flex min-h-11 flex-1 flex-col items-center gap-1 py-2 text-[11px]"
-          style={{ color: open || moreCurrent ? "var(--accent)" : "var(--text-secondary)" }}
+          style={{ color: open || moreCurrent ? "var(--accent-text)" : "var(--text-secondary)" }}
         >
           <IconDots />
           More
@@ -510,7 +510,7 @@ function BottomLink({
   const colour = !item.href
     ? "var(--text-muted)"
     : current
-      ? "var(--accent)"
+      ? "var(--accent-text)"
       : "var(--text-secondary)";
 
   if (!item.href) {

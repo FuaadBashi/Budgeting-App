@@ -127,7 +127,7 @@ export function RuleManager({
       ) : (
         <ol className="card divide-y" style={{ borderColor: "var(--gridline)" }}>
           {rules.map((rule, index) => (
-            <li key={rule.id} className="p-4" style={{ opacity: rule.active ? 1 : 0.6 }}>
+            <li key={rule.id} className={`p-4 ${rule.active ? "" : "dimmed"}`}>
               {editing === rule.id ? (
                 <RuleForm
                   rule={rule}

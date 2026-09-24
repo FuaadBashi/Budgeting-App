@@ -175,7 +175,7 @@ export function TriageDeck({
               Category
               {row.suggested_category_id && category === row.suggested_category_id && (
                 // Say where it came from: a person's rule is not a model's guess.
-                <span className="ml-1.5" style={{ color: "var(--series-1)" }}>
+                <span className="ml-1.5" style={{ color: "var(--accent-text)" }}>
                   {row.raw?.rule ? `by rule: ${row.raw.rule}` : "suggested"}
                 </span>
               )}

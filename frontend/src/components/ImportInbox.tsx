@@ -473,7 +473,7 @@ function CandidateRow({
                     the user's own choice is the field they stop checking. */}
                 {row.suggested_category_id &&
                   category === row.suggested_category_id && (
-                    <span className="ml-1.5" style={{ color: "var(--series-1)" }}>
+                    <span className="ml-1.5" style={{ color: "var(--accent-text)" }}>
                       suggested
                     </span>
                   )}
