@@ -1,16 +1,19 @@
 import { AppShell } from "@/components/AppShell";
 import { BalanceCurve } from "@/components/BalanceCurve";
 import { MatchReview } from "@/components/MatchReview";
+import { MonthGrid } from "@/components/MonthGrid";
 import { ObligationManager } from "@/components/ObligationManager";
 import { requireSession } from "@/lib/guard";
 import {
   getCalendar,
+  getCalendarMonth,
   getCategories,
   getObligationInstances,
   getObligations,
   getTransactions,
   type Category,
   type CalendarEvent,
+  type CalendarMonth,
   type FinancialCalendar,
   type Obligation,
   type ObligationInstance,
@@ -86,15 +89,27 @@ function CalendarRow({ event: e }: { event: UpcomingEvent }) {
   );
 }
 
-export default async function CalendarPage() {
+/** The month on screen: ?month=YYYY-MM, or this month in the server's clock. */
+function monthParam(value: string | undefined, today: string): string {
+  return value && /^\d{4}-(0[1-9]|1[0-2])$/.test(value) ? value : today.slice(0, 7);
+}
+
+export default async function CalendarPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ month?: string }>;
+}) {
   const gate = await requireSession();
   if (gate) return gate;
+  const params = await searchParams;
 
   let obligations: Obligation[] = [];
   let calendar: FinancialCalendar | null = null;
   let categories: Category[] = [];
   let instances: ObligationInstance[] = [];
   let matched: Record<string, Transaction> = {};
+  let month = "";
+  let monthView: CalendarMonth | null = null;
   let error: string | null = null;
 
   try {
@@ -104,6 +119,10 @@ export default async function CalendarPage() {
       getCategories(),
       getObligationInstances(),
     ]);
+    // The calendar's own start date is the server's "today", in the reporting
+    // timezone -- not this machine's clock.
+    month = monthParam(params.month, calendar.start);
+    monthView = await getCalendarMonth(month);
     matched = await transactionsForMatches(instances);
   } catch (e) {
     error = e instanceof Error ? e.message : "Unknown error";
@@ -137,6 +156,15 @@ export default async function CalendarPage() {
           </div>
         ) : (
           <>
+            {monthView && (
+              <section>
+                <h2 className="section-label mb-3">Month</h2>
+                <div className="card p-4 sm:p-5">
+                  <MonthGrid key={month} data={monthView} month={month} />
+                </div>
+              </section>
+            )}
+
             {calendar && (
               <section>
                 <h2 className="section-label mb-3">Projected balance</h2>
@@ -152,6 +180,13 @@ export default async function CalendarPage() {
                         {calendar.first_breach_cause ?? "A committed payment"} on{" "}
                         {shortDate(calendar.first_breach_date)} takes projected cash
                         below your {formatMinor(calendar.protected_buffer_minor)} buffer.
+                      </>
+                    ) : calendar.protected_buffer_minor === 0 ? (
+                      // Same wording as the dashboard: a tick against £0.00
+                      // reads as a safety margin that does not exist.
+                      <>
+                        Projected cash stays above zero for the next 90 days. No
+                        protected cash buffer is set.
                       </>
                     ) : (
                       <>

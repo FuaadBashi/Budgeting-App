@@ -21,15 +21,16 @@ from dataclasses import dataclass, field
 from datetime import date, timedelta
 from decimal import Decimal
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.domain.disposable import account_balances
 from app.domain.income import occurrences as income_occurrences
+from app.domain.ledger_scope import posted_transaction_ids
 from app.domain.money import ZERO
 from app.domain.obligation_scope import unmatched
 from app.models.enums import LIQUID_KINDS
-from app.models.ledger import Account, Transaction
+from app.models.ledger import Account, Posting, Transaction
 from app.models.planning import (
     ExpectedIncome,
     FutureObligation,
@@ -154,17 +155,32 @@ def _future_posted(session: Session, start: date, end: date) -> list[tuple[date,
     return out
 
 
+def curve_accounts(session: Session) -> set:
+    """The accounts the balance curve is drawn from: active and liquid.
+
+    One selector for the forward curve and the month grid's past days, so the
+    day the grid switches from actual to projected cannot show a jump that is
+    only two lists of accounts disagreeing.
+    """
+    return {
+        a.id
+        for a in session.scalars(select(Account).where(Account.active.is_(True)))
+        if a.kind in LIQUID_KINDS
+    }
+
+
+def curve_balance(session: Session, as_of: date) -> Decimal:
+    balances = account_balances(session, as_of)
+    return sum((balances.get(i, ZERO) for i in curve_accounts(session)), ZERO)
+
+
 def build(
     session: Session, today: date, horizon: date | None = None
 ) -> Calendar:
     """The projected liquid-cash curve from today to the horizon."""
     end = horizon or today + timedelta(days=DEFAULT_HORIZON_DAYS)
 
-    balances = account_balances(session, today)
-    opening = ZERO
-    for account in session.scalars(select(Account).where(Account.active.is_(True))):
-        if account.kind in LIQUID_KINDS:
-            opening += balances.get(account.id, ZERO)
+    opening = curve_balance(session, today)
 
     profile = session.scalars(select(UserProfile)).first()
     buffer_ = profile.protected_cash_buffer if profile else ZERO
@@ -224,3 +240,125 @@ def build(
         first_breach_date=first_breach_date,
         first_breach_cause=first_breach_cause,
     )
+
+
+# --------------------------------------------------------------------------
+# The month grid
+# --------------------------------------------------------------------------
+
+ACTUAL = "actual"
+TODAY = "today"
+PROJECTED = "projected"
+#: After the forecast horizon: nothing is claimed about these days.
+BEYOND = "beyond"
+
+
+@dataclass(frozen=True)
+class MonthDay:
+    day: date
+    kind: str
+    #: Cash that actually moved, by each transaction's net effect on the curve's
+    #: accounts. A transfer between two of them nets to nothing and is neither.
+    money_in: Decimal = ZERO
+    money_out: Decimal = ZERO
+    #: Every posted transaction booked that day, including card purchases that
+    #: moved no cash yet (X2) -- the grid should not hide spending that happened.
+    transactions: int = 0
+    events: list[CalendarEvent] = field(default_factory=list)
+    closing_balance: Decimal | None = None
+    below_buffer: bool = False
+
+
+@dataclass(frozen=True)
+class MonthView:
+    start: date
+    end: date
+    today: date
+    protected_buffer: Decimal
+    days: list[MonthDay]
+
+
+def month(session: Session, first: date, today: date, horizon: date | None = None) -> MonthView:
+    """One calendar month: what happened before today, what is committed after.
+
+    Past days read the ledger -- the opening balance from `account_balances`
+    and each day's posted movements -- and future days read `build`, the same
+    engine the balance curve draws. Nothing is projected for a past day and
+    nothing is invented for a day past the forecast horizon.
+    """
+    first = first.replace(day=1)
+    last = (first.replace(day=28) + timedelta(days=4)).replace(day=1) - timedelta(days=1)
+    horizon = horizon or today + timedelta(days=DEFAULT_HORIZON_DAYS)
+
+    profile = session.scalars(select(UserProfile)).first()
+    buffer_ = profile.protected_cash_buffer if profile else ZERO
+
+    # Actuals, from the ledger, for every day up to and including today.
+    actual_end = min(last, today)
+    per_day: dict[date, dict] = {}
+    if first <= actual_end:
+        accounts = curve_accounts(session)
+        rows = session.execute(
+            select(
+                Transaction.booking_date,
+                Transaction.id,
+                func.coalesce(
+                    func.sum(Posting.amount).filter(Posting.account_id.in_(accounts)), ZERO
+                ),
+            )
+            .join(Posting, Posting.transaction_id == Transaction.id)
+            .where(Transaction.id.in_(posted_transaction_ids(start=first, end=actual_end)))
+            .group_by(Transaction.booking_date, Transaction.id)
+        ).all()
+        for when, _txn, net in rows:
+            day = per_day.setdefault(when, {"in": ZERO, "out": ZERO, "count": 0})
+            day["count"] += 1
+            if net > ZERO:
+                day["in"] += net
+            elif net < ZERO:
+                day["out"] += net
+
+    # Forward, from the curve engine itself.
+    projected: dict[date, CalendarDay] = {}
+    if last >= today and today <= horizon:
+        forward = build(session, today, min(last, horizon))
+        projected = {d.day: d for d in forward.days}
+
+    days: list[MonthDay] = []
+    balance = curve_balance(session, first - timedelta(days=1)) if first <= actual_end else None
+    cursor = first
+    while cursor <= last:
+        moved = per_day.get(cursor, {"in": ZERO, "out": ZERO, "count": 0})
+        if cursor < today:
+            balance += moved["in"] + moved["out"]
+            days.append(
+                MonthDay(
+                    day=cursor,
+                    kind=ACTUAL,
+                    money_in=moved["in"],
+                    money_out=moved["out"],
+                    transactions=moved["count"],
+                    closing_balance=balance,
+                    below_buffer=balance < buffer_,
+                )
+            )
+        elif cursor in projected:
+            ahead = projected[cursor]
+            days.append(
+                MonthDay(
+                    day=cursor,
+                    kind=TODAY if cursor == today else PROJECTED,
+                    money_in=moved["in"],
+                    money_out=moved["out"],
+                    transactions=moved["count"],
+                    events=ahead.events,
+                    closing_balance=ahead.closing_balance,
+                    below_buffer=ahead.below_buffer,
+                )
+            )
+        else:
+            days.append(MonthDay(day=cursor, kind=BEYOND))
+        cursor += timedelta(days=1)
+
+    return MonthView(start=first, end=last, today=today, protected_buffer=buffer_, days=days)
+

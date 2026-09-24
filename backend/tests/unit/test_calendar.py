@@ -235,3 +235,98 @@ def test_curve_covers_every_day_in_the_window(session, accounts, profile):
         date(2026, 8, 31),
         *(date(2026, 9, n) for n in range(1, 11)),
     ]
+
+
+# --------------------------------------------------------------------------
+# The month grid
+# --------------------------------------------------------------------------
+
+MID = date(2026, 8, 20)
+
+
+def _august_ledger(session, accounts):
+    post(session, date(2026, 8, 3), "Tesco",
+         [(accounts["current"], "-40"), (accounts["groceries"], "40")])
+    post(session, date(2026, 8, 3), "Coffee",
+         [(accounts["cash"], "-3"), (accounts["groceries"], "3")])
+    post(session, date(2026, 8, 10), "Salary",
+         [(accounts["current"], "2000"), (accounts["salary"], "-2000")])
+    post(session, date(2026, 8, 12), "Cash machine",
+         [(accounts["current"], "-50"), (accounts["cash"], "50")])
+    post(session, date(2026, 8, 14), "Card purchase",
+         [(accounts["loan"], "-25"), (accounts["groceries"], "25")])
+
+
+def test_every_past_day_closes_on_the_ledger_s_own_balance(session, accounts, profile):
+    """The grid adds up each day's movements itself; the ledger answers the same
+    question with `account_balances`. They must agree on every day, or the grid
+    is a second figure for one balance."""
+    _august_ledger(session, accounts)
+
+    view = cal.month(session, date(2026, 8, 1), MID)
+
+    for d in view.days:
+        if d.kind == cal.ACTUAL:
+            assert d.closing_balance == cal.curve_balance(session, d.day), d.day
+
+
+def test_a_transfer_between_cash_accounts_is_neither_money_in_nor_out(session, accounts, profile):
+    _august_ledger(session, accounts)
+    atm = next(d for d in cal.month(session, date(2026, 8, 1), MID).days if d.day == date(2026, 8, 12))
+    assert (atm.money_in, atm.money_out, atm.transactions) == (Decimal("0"), Decimal("0"), 1)
+
+
+def test_a_card_purchase_is_counted_but_moves_no_cash(session, accounts, profile):
+    """X2: the card moved; cash did not, until the statement is paid."""
+    _august_ledger(session, accounts)
+    card = next(d for d in cal.month(session, date(2026, 8, 1), MID).days if d.day == date(2026, 8, 14))
+    assert card.transactions == 1
+    assert card.money_out == Decimal("0")
+
+
+def test_two_accounts_on_one_day_sum_their_cash(session, accounts, profile):
+    _august_ledger(session, accounts)
+    third = next(d for d in cal.month(session, date(2026, 8, 1), MID).days if d.day == date(2026, 8, 3))
+    assert (third.money_out, third.transactions) == (Decimal("-43"), 2)
+
+
+def test_today_and_after_are_the_curve_engine_s_own_days(session, accounts, profile):
+    add_obligation(session, "Rent", "600", date(2026, 8, 25))
+    view = cal.month(session, date(2026, 8, 1), MID)
+    curve = {d.day: d for d in cal.build(session, MID, date(2026, 8, 31)).days}
+
+    ahead = [d for d in view.days if d.day >= MID]
+    assert ahead[0].kind == cal.TODAY
+    assert all(d.kind == cal.PROJECTED for d in ahead[1:])
+    assert all(d.closing_balance == curve[d.day].closing_balance for d in ahead)
+    rent = next(d for d in ahead if d.day == date(2026, 8, 25))
+    assert [e.name for e in rent.events] == ["Rent"]
+
+
+def test_nothing_is_claimed_past_the_forecast_horizon(session, accounts, profile):
+    view = cal.month(session, date(2026, 12, 1), MID, horizon=date(2026, 12, 10))
+    after = [d for d in view.days if d.day > date(2026, 12, 10)]
+    assert after and all(d.kind == cal.BEYOND and d.closing_balance is None for d in after)
+
+
+def test_a_future_month_has_no_actual_days(session, accounts, profile):
+    view = cal.month(session, date(2026, 9, 1), MID)
+    assert all(d.kind != cal.ACTUAL for d in view.days)
+    assert len(view.days) == 30
+
+
+def test_the_month_endpoint_refuses_a_malformed_month(session):
+    from fastapi.testclient import TestClient
+
+    from app.db import get_session
+    from app.main import app
+
+    app.dependency_overrides[get_session] = lambda: session
+    try:
+        with TestClient(app) as client:
+            assert client.get("/api/dashboard/calendar/month?month=August").status_code == 422
+            ok = client.get("/api/dashboard/calendar/month?month=2026-02&as_of=2026-02-10")
+            assert ok.status_code == 200
+            assert len(ok.json()["days"]) == 28
+    finally:
+        app.dependency_overrides.clear()

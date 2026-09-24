@@ -401,3 +401,61 @@ def calendar(
             for d in c.days
         ],
     )
+
+
+class MonthDayOut(BaseModel):
+    day: date
+    #: "actual" before today, "today", "projected" after, "beyond" past the horizon.
+    kind: str
+    money_in_minor: int
+    money_out_minor: int
+    transactions: int
+    events: list[CalendarEventOut]
+    closing_balance_minor: int | None
+    below_buffer: bool
+
+
+class MonthOut(BaseModel):
+    start: date
+    end: date
+    today: date
+    protected_buffer_minor: int
+    days: list[MonthDayOut]
+
+
+@router.get("/dashboard/calendar/month", response_model=MonthOut)
+def calendar_month(
+    month: str,
+    as_of: date | None = None,
+    session: Session = Depends(get_session),
+) -> MonthOut:
+    """One month as a grid: actual cash movement before today, committed flows
+    after it. ``month`` is ``YYYY-MM``."""
+    try:
+        year, number = (int(part) for part in month.split("-"))
+        first = date(year, number, 1)
+    except (ValueError, TypeError):
+        raise HTTPException(status_code=422, detail=f"month must look like 2026-09, not {month!r}")
+    view = cal.month(session, first, as_of or clock_today(session))
+    return MonthOut(
+        start=view.start,
+        end=view.end,
+        today=view.today,
+        protected_buffer_minor=to_minor(view.protected_buffer),
+        days=[
+            MonthDayOut(
+                day=d.day,
+                kind=d.kind,
+                money_in_minor=to_minor(d.money_in),
+                money_out_minor=to_minor(d.money_out),
+                transactions=d.transactions,
+                events=[
+                    CalendarEventOut(kind=e.kind, name=e.name, amount_minor=to_minor(e.amount))
+                    for e in d.events
+                ],
+                closing_balance_minor=to_minor(d.closing_balance) if d.closing_balance is not None else None,
+                below_buffer=d.below_buffer,
+            )
+            for d in view.days
+        ],
+    )

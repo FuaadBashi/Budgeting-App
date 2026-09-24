@@ -882,6 +882,30 @@ export async function voidTransaction(id: string): Promise<Transaction> {
 export const getCalendar = () =>
   get<FinancialCalendar>("/dashboard/calendar?until=" + horizon());
 
+export interface MonthDay {
+  day: string;
+  /** "actual" before today, "today", "projected" after, "beyond" past the forecast. */
+  kind: "actual" | "today" | "projected" | "beyond";
+  money_in_minor: Minor;
+  money_out_minor: Minor;
+  transactions: number;
+  events: CalendarEvent[];
+  closing_balance_minor: Minor | null;
+  below_buffer: boolean;
+}
+
+export interface CalendarMonth {
+  start: string;
+  end: string;
+  today: string;
+  protected_buffer_minor: Minor;
+  days: MonthDay[];
+}
+
+/** `month` is YYYY-MM. */
+export const getCalendarMonth = (month: string) =>
+  get<CalendarMonth>(`/dashboard/calendar/month?month=${encodeURIComponent(month)}`);
+
 function horizon(): string {
   const d = new Date();
   d.setDate(d.getDate() + 90);
