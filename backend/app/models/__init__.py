@@ -10,6 +10,9 @@ from app.models.enums import (
     CategoryNature,
     GoalPriority,
     RolloverPolicy,
+    RuleDirection,
+    RuleField,
+    RuleMatch,
     SuggestionSource,
     TransactionClass,
     TransactionStatus,
@@ -17,6 +20,7 @@ from app.models.enums import (
 from app.models.enrichment import MerchantSuggestion
 from app.models.imports import ImportBatch, ImportCandidate
 from app.models.ledger import Account, Category, Posting, Transaction
+from app.models.rules import CategorisationRule
 from app.models.planning import (
     Budget,
     BudgetRevision,
@@ -31,9 +35,9 @@ from app.models.planning import (
 
 __all__ = [
     "ASSET_KINDS", "LIQUID_KINDS", "NOMINAL_KINDS", "PROTECTED_BY_DEFAULT",
-    "Account", "AccountKind", "Base", "Budget", "BudgetPeriod", "BudgetRevision", "Category",
+    "Account", "AccountKind", "CategorisationRule", "Base", "Budget", "BudgetPeriod", "BudgetRevision", "Category",
     "CandidateStatus", "CategoryNature", "ExpectedIncome", "FutureObligation", "GoalContribution",
-    "GoalPriority", "ImportBatch", "ImportCandidate", "MerchantSuggestion", "Money", "ObligationInstance", "Posting", "RolloverPolicy",
+    "GoalPriority", "ImportBatch", "ImportCandidate", "MerchantSuggestion", "Money", "ObligationInstance", "Posting", "RolloverPolicy", "RuleDirection", "RuleField", "RuleMatch",
     "SavingsGoal", "Scenario", "SuggestionSource", "TimestampedUUID", "Transaction", "TransactionClass",
     "TransactionStatus", "UserProfile",
 ]

@@ -55,6 +55,7 @@ BACKUP_TABLES = (
     "expected_income",
     "scenarios",
     "merchant_suggestions",
+    "categorisation_rules",
     "import_batches",
     "import_candidates",
 )

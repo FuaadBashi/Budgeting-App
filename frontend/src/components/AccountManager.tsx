@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type FormEvent, type ReactNode } from "react";
+import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import {
   createAccount,
@@ -9,6 +9,7 @@ import {
   type Category,
 } from "@/lib/api";
 import { formatMinor, parseMajorToMinor } from "@/lib/money";
+import { ErrorLine, Field, PrimaryButton, SecondaryButton, SectionHeader } from "@/components/ui";
 
 type Kind = {
   value: string;
@@ -51,22 +52,7 @@ function openingBalanceMinor(kind: Kind, entered: number, overdrawn: boolean): n
   return overdrawn ? -entered : entered;
 }
 
-export function AccountManager({
-  accounts,
-  categories,
-}: {
-  accounts: Account[];
-  categories: Category[];
-}) {
-  return (
-    <div className="space-y-8">
-      <AccountsSection accounts={accounts} />
-      <CategoriesSection categories={categories} />
-    </div>
-  );
-}
-
-function AccountsSection({ accounts }: { accounts: Account[] }) {
+export function AccountsSection({ accounts }: { accounts: Account[] }) {
   const router = useRouter();
   const [open, setOpen] = useState(accounts.length === 0);
   const [kindValue, setKindValue] = useState("current");
@@ -115,7 +101,15 @@ function AccountsSection({ accounts }: { accounts: Account[] }) {
 
   return (
     <section>
-      <SectionHeader title="Accounts" open={open} onToggle={() => setOpen((v) => !v)} action="New account" />
+      <SectionHeader
+        title="Accounts"
+        description="Where money is held, where it comes from and where it goes."
+        action={
+          <SecondaryButton onClick={() => setOpen((v) => !v)} aria-expanded={open}>
+            {open ? "Cancel" : "New account"}
+          </SecondaryButton>
+        }
+      />
 
       {open && (
         <form onSubmit={onSubmit} className="card mb-4 space-y-4 p-5">
@@ -174,11 +168,7 @@ function AccountsSection({ accounts }: { accounts: Account[] }) {
                 : "It holds no balance of its own; it is the other side of each transaction."}
           </p>
 
-          {error && (
-            <p className="text-sm" role="alert" style={{ color: "var(--status-critical)" }}>
-              ✕ {error}
-            </p>
-          )}
+          {error && <ErrorLine>{error}</ErrorLine>}
 
           <div className="flex justify-end">
             <PrimaryButton busy={busy}>Create account</PrimaryButton>
@@ -233,7 +223,7 @@ function pathLabel(category: Category, byId: Map<string, Category>): string {
   return names.join(" › ");
 }
 
-function CategoriesSection({ categories }: { categories: Category[] }) {
+export function CategoriesSection({ categories }: { categories: Category[] }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -267,7 +257,15 @@ function CategoriesSection({ categories }: { categories: Category[] }) {
 
   return (
     <section>
-      <SectionHeader title="Categories" open={open} onToggle={() => setOpen((v) => !v)} action="New category" />
+      <SectionHeader
+        title="Categories"
+        description="What spending was for. Budgets and rules are scoped by these."
+        action={
+          <SecondaryButton onClick={() => setOpen((v) => !v)} aria-expanded={open}>
+            {open ? "Cancel" : "New category"}
+          </SecondaryButton>
+        }
+      />
 
       {open && (
         <form onSubmit={onSubmit} className="card mb-4 space-y-4 p-5">
@@ -296,11 +294,7 @@ function CategoriesSection({ categories }: { categories: Category[] }) {
             A budget for a category counts everything inside it. A budget with no category counts
             only discretionary spending, so rent marked essential never eats into it.
           </p>
-          {error && (
-            <p className="text-sm" role="alert" style={{ color: "var(--status-critical)" }}>
-              ✕ {error}
-            </p>
-          )}
+          {error && <ErrorLine>{error}</ErrorLine>}
           <div className="flex justify-end">
             <PrimaryButton busy={busy}>Create category</PrimaryButton>
           </div>
@@ -324,54 +318,5 @@ function CategoriesSection({ categories }: { categories: Category[] }) {
         </ul>
       )}
     </section>
-  );
-}
-
-function SectionHeader({
-  title,
-  open,
-  onToggle,
-  action,
-}: {
-  title: string;
-  open: boolean;
-  onToggle: () => void;
-  action: string;
-}) {
-  return (
-    <div className="mb-3 flex items-center justify-between gap-3">
-      <h2 className="section-label">{title}</h2>
-      <button
-        type="button"
-        onClick={onToggle}
-        aria-expanded={open}
-        className="min-h-8 rounded-full px-3 text-xs"
-        style={{ color: "var(--text-secondary)", boxShadow: "inset 0 0 0 1px var(--hairline-strong)" }}
-      >
-        {open ? "Cancel" : action}
-      </button>
-    </div>
-  );
-}
-
-function PrimaryButton({ busy, children }: { busy: boolean; children: ReactNode }) {
-  return (
-    <button
-      type="submit"
-      disabled={busy}
-      className="rounded-full px-4 py-2 text-sm font-medium"
-      style={{ background: "var(--accent)", color: "var(--on-accent)", opacity: busy ? 0.6 : 1 }}
-    >
-      {busy ? "Saving…" : children}
-    </button>
-  );
-}
-
-function Field({ label, children }: { label: string; children: ReactNode }) {
-  return (
-    <label className="block text-sm font-medium" style={{ color: "var(--text-secondary)" }}>
-      <span className="mb-1.5 block">{label}</span>
-      {children}
-    </label>
   );
 }

@@ -605,6 +605,13 @@ def stage(
 
     session.flush()
 
+    # A person's rules first, synchronously: they are deterministic and free,
+    # so the inbox shows their categories on its first render. Imported here
+    # because rules reads normalise_description from this module.
+    from app.domain import rules
+
+    rules.apply_to_candidates(session, list(by_row.values()), account_id)
+
     if enrich:
         enrich_batch(session, batch.id, use_models=model_features)
 
@@ -639,17 +646,21 @@ def enrich_batch(session: Session, batch_id, *, use_models: bool = True) -> None
         return
 
     descriptions = [candidate.description for candidate in candidates]
+    # Only rows nothing has categorised yet. A rule already stamped at staging
+    # outranks the cache and the model, and asking about it would pay for an
+    # answer that could not be used.
+    open_rows = [c for c in candidates if c.suggested_category_id is None]
     try:
         from app.domain import enrichment
 
         flagged: dict[str, str] = {}
         suggestions = enrichment.resolve(
             session,
-            descriptions,
+            [candidate.description for candidate in open_rows],
             flagged=flagged,
             suggester=None if use_models else enrichment.NullSuggester(),
-        )
-        for candidate in candidates:
+        ) if open_rows else {}
+        for candidate in open_rows:
             key = normalise_description(candidate.description)
             category_id = suggestions.get(key)
             if category_id is not None:
@@ -679,6 +690,9 @@ def enrich_batch(session: Session, batch_id, *, use_models: bool = True) -> None
             canonicalizer=None if use_models else canonical.NullCanonicalizer(),
         )
         for candidate in candidates:
+            # A rule that renamed the merchant is the name a person chose.
+            if candidate.raw.get("rule_merchant"):
+                continue
             key = normalise_description(candidate.description)
             name = names.get(key)
             if name:

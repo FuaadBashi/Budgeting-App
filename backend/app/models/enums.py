@@ -112,3 +112,25 @@ PROTECTED_BY_DEFAULT = frozenset({GoalPriority.CRITICAL, GoalPriority.HIGH})
 class CategoryNature(enum.StrEnum):
     ESSENTIAL = "essential"
     DISCRETIONARY = "discretionary"
+
+
+class RuleField(enum.StrEnum):
+    """Which text a categorisation rule reads."""
+
+    DESCRIPTION = "description"
+    MERCHANT = "merchant"
+    EITHER = "either"
+
+
+class RuleMatch(enum.StrEnum):
+    CONTAINS = "contains"
+    STARTS_WITH = "starts_with"
+    #: Compared after `normalise_description` on both sides, so the reference
+    #: numbers a bank appends do not stop "TESCO STORES" equalling itself.
+    EQUALS = "equals"
+
+
+class RuleDirection(enum.StrEnum):
+    ANY = "any"
+    OUT = "out"
+    IN = "in"

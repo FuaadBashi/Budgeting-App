@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState, type FormEvent, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -10,6 +11,7 @@ import {
   type TransactionEdit,
 } from "@/lib/api";
 import { formatSignedMinor } from "@/lib/money";
+import { ruleLink } from "@/lib/ruleLink";
 
 const CLASS_LABEL: Record<string, string> = {
   income: "Income",
@@ -169,6 +171,18 @@ export function TransactionList({
                     <RowButton onClick={() => setEditing(txn.id)} label={`Edit ${txn.description}`}>
                       Edit
                     </RowButton>
+                    <Link
+                      href={ruleLink({
+                        description: txn.description,
+                        merchant: txn.merchant,
+                        categoryId: txn.postings.find((p) => expense.has(p.account_id))?.category_id,
+                      })}
+                      aria-label={`Make a rule from ${txn.description}`}
+                      className="inline-flex min-h-8 items-center rounded-full px-3 text-xs"
+                      style={{ color: "var(--text-secondary)", boxShadow: "inset 0 0 0 1px var(--hairline-strong)" }}
+                    >
+                      Rule
+                    </Link>
                     <RowButton
                       onClick={() => void onVoid(txn)}
                       disabled={busy === txn.id}

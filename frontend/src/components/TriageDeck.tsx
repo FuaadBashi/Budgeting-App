@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { Account, Category, ImportCandidate } from "@/lib/api";
 import { formatMinor } from "@/lib/money";
+import { ruleLink } from "@/lib/ruleLink";
 
 /**
  * One candidate at a time, decided with a swipe or a key.
@@ -173,7 +174,10 @@ export function TriageDeck({
             <span className="mb-1 block">
               Category
               {row.suggested_category_id && category === row.suggested_category_id && (
-                <span className="ml-1.5" style={{ color: "var(--series-1)" }}>suggested</span>
+                // Say where it came from: a person's rule is not a model's guess.
+                <span className="ml-1.5" style={{ color: "var(--series-1)" }}>
+                  {row.raw?.rule ? `by rule: ${row.raw.rule}` : "suggested"}
+                </span>
               )}
             </span>
             <select value={category} onChange={(e) => updateChoice({ category: e.target.value })} className="form-control py-1.5 text-sm">
@@ -182,6 +186,19 @@ export function TriageDeck({
             </select>
           </label>
         </div>
+
+        {category && !row.raw?.rule && (
+          // A new tab, so building the rule does not lose the place in the deck.
+          <a
+            href={ruleLink({ description: row.description, merchant: row.merchant, categoryId: category })}
+            target="_blank"
+            rel="noopener"
+            className="mt-4 inline-block text-xs underline"
+            style={{ color: "var(--text-secondary)" }}
+          >
+            Always categorise rows like this? Make a rule
+          </a>
+        )}
       </div>
 
       <div className="flex gap-3">

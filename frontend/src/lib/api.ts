@@ -508,6 +508,50 @@ export interface CategoryInput {
   nature: Category["nature"];
 }
 export const createCategory = (input: CategoryInput) => post<Category>("/categories", input);
+
+export type RuleField = "description" | "merchant" | "either";
+export type RuleMatch = "contains" | "starts_with" | "equals";
+export type RuleDirection = "any" | "out" | "in";
+
+export interface Rule {
+  id: string;
+  name: string;
+  position: number;
+  active: boolean;
+  field: RuleField;
+  match: RuleMatch;
+  pattern: string;
+  amount_min_minor: Minor | null;
+  amount_max_minor: Minor | null;
+  direction: RuleDirection;
+  account_id: string | null;
+  set_category_id: string | null;
+  set_merchant: string | null;
+}
+
+export type RuleInput = Partial<Omit<Rule, "id" | "position">> & { pattern?: string };
+
+export interface RulePreviewRow {
+  transaction_id: string;
+  booking_date: string;
+  description: string;
+  merchant: string | null;
+  /** Signed from the account's side: negative is money out. */
+  amount_minor: Minor;
+  current_category_id: string | null;
+  changes_category: boolean;
+  changes_merchant: boolean;
+  skipped: string | null;
+}
+
+export const getRules = () => get<Rule[]>("/rules");
+export const createRule = (input: RuleInput) => post<Rule>("/rules", input);
+export const updateRule = (id: string, input: RuleInput) => patch<Rule>(`/rules/${id}`, input);
+export const orderRules = (ruleIds: string[]) =>
+  send<Rule[]>("/rules/order", { rule_ids: ruleIds }, "PUT");
+export const previewRule = (id: string) => get<RulePreviewRow[]>(`/rules/${id}/preview`);
+export const applyRule = (id: string, transactionIds: string[]) =>
+  post<{ applied: number }>(`/rules/${id}/apply`, { transaction_ids: transactionIds });
 export const createTransaction = (input: TransactionInput) =>
   post<Transaction>("/transactions", input);
 export const getBudgets = () => get<BudgetPeriod[]>("/dashboard/budgets");

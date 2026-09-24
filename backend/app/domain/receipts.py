@@ -587,6 +587,11 @@ def stage(
 
     session.flush()
 
+    # Same precedence as a statement row: a person's rules before any model.
+    from app.domain import rules
+
+    rules.apply_to_candidates(session, candidates, account_id)
+
     by_row = {c.row_number: c for c in candidates}
     for candidate, target in intra_batch:
         if isinstance(target, int):
