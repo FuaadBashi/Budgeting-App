@@ -95,7 +95,7 @@ export function TransactionList({
         </p>
       )}
 
-      <ul className="card divide-y" style={{ borderColor: "var(--gridline)" }}>
+      <ul className="card vault-ledger divide-y" style={{ borderColor: "var(--gridline)" }}>
         {transactions.map((txn) => {
           const voided = txn.status === "voided";
           if (editing === txn.id) {
@@ -117,6 +117,7 @@ export function TransactionList({
             // which then drew straight through the amount ("Exp£54.90").
             <li key={txn.id} className={`p-4 ${voided ? "dimmed" : ""}`}>
               <div className="flex items-baseline gap-3">
+                <span className="merchant-mark" aria-hidden>{(txn.merchant || txn.description || '?').slice(0, 2).toUpperCase()}</span>
                 <span
                   className="hidden w-20 shrink-0 text-xs tnum sm:block"
                   style={{ color: "var(--text-muted)" }}

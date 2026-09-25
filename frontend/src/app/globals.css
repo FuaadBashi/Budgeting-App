@@ -1,5 +1,58 @@
 @import "tailwindcss";
 
+/* Vault's structural language uses the existing contrast-tested palette. */
+.vault-nav { background: var(--surface-1); border-right: 1px solid var(--hairline); }
+.vault-brand { display: flex; align-items: center; gap: 12px; font-size: 20px; letter-spacing: .16em; font-weight: 600; }
+.vault-mark { display: grid; place-items: center; width: 40px; height: 44px; border: 1px solid var(--accent-text); color: var(--accent-text); font-family: var(--font-fraunces); font-size: 30px; border-radius: 20px 20px 4px 4px; }
+.vault-brand-caption { display: block; font: 8px/2.4 system-ui; letter-spacing: .13em; color: var(--text-muted); }
+.vault-nav-link { display: flex; align-items: center; gap: 12px; padding: 11px 12px; min-height: 44px; font-size: 13px; color: var(--text-secondary); border-radius: 5px; }
+.vault-nav-link svg { width: 17px; height: 17px; flex-shrink: 0; }
+.vault-nav-link:hover { background: var(--surface-2); }
+.vault-nav-link[aria-current="page"] { background: var(--accent-soft); color: var(--accent-text); box-shadow: inset 2px 0 var(--accent); }
+.vault-nav-index { margin-left: auto; font: 9px var(--font-ibm-plex-mono), monospace; color: var(--text-muted); }
+[data-design="noir"] .finance-shell { background-image: radial-gradient(ellipse at 85% 0%, var(--accent-soft), transparent 45%); }
+[data-design="noir"] .finance-shell main { max-width: 1280px; }
+[data-design="noir"] .finance-shell main > header { padding-bottom: 24px; border-bottom: 1px solid var(--hairline-strong); }
+[data-design="noir"] .finance-shell main > header h1 { font-size: clamp(30px, 3.5vw, 48px); line-height: 1.12; letter-spacing: -.045em; font-weight: 500; }
+[data-design="noir"] .finance-shell main > header p { margin-top: 12px; }
+[data-design="noir"] .card { border-radius: 12px; }
+[data-design="noir"] .stat-tile { height: 100%; min-height: 170px; border-top: 1px solid var(--hairline-strong); }
+[data-design="noir"] .stat-lead { background: linear-gradient(120deg, var(--accent-soft), var(--surface-1)); border-top-color: var(--accent); position: relative; overflow: hidden; }
+[data-design="noir"] .stat-lead > .font-display { font-size: clamp(38px, 5vw, 72px); letter-spacing: -.055em; font-weight: 500; overflow-wrap: anywhere; }
+[data-design="noir"] .vault-dashboard { display: flex; flex-direction: column; }
+[data-design="noir"] .vault-dashboard > * { order: 3; }
+[data-design="noir"] .vault-dashboard > header { order: 0; }
+[data-design="noir"] .vault-dashboard > .vault-stats { order: 1; }
+[data-design="noir"] .vault-dashboard > .vault-runway { order: 2; }
+[data-design="noir"] .vault-runway { padding: 24px; border: 1px solid var(--hairline); border-radius: 12px; background: linear-gradient(180deg, var(--surface-1), transparent); }
+[data-design="noir"] .vault-runway > .card { background: transparent; box-shadow: none; padding: 0; }
+.merchant-mark { display: none; }
+[data-design="noir"] .merchant-mark { display: grid; place-items: center; flex-shrink: 0; width: 36px; height: 36px; align-self: center; background: var(--accent-soft); color: var(--accent-text); border: 1px solid var(--hairline); border-radius: 10px; font-size: 10px; font-weight: 600; letter-spacing: .05em; }
+[data-design="noir"] .vault-ledger { background: transparent; box-shadow: none; border-top: 1px solid var(--hairline-strong); border-bottom: 1px solid var(--hairline-strong); border-radius: 0; }
+[data-design="noir"] .vault-ledger > li { padding-block: 20px; }
+[data-design="noir"] .vault-ledger > li:hover { background: var(--surface-1); }
+.goal-dial { display: none; }
+[data-design="noir"] .goal-vault { position: relative; padding: 28px; border-top: 2px solid var(--accent); }
+[data-design="noir"] .goal-dial { display: grid; place-items: center; height: 96px; width: 96px; border-radius: 50%; margin-bottom: 24px; }
+[data-design="noir"] .goal-dial > span { display: grid; grid-auto-flow: column; align-items: baseline; justify-content: center; align-content: center; width: 80px; height: 80px; border-radius: 50%; background: var(--surface-1); color: var(--text-primary); font-family: var(--font-display); font-size: 30px; }
+.goal-dial small { font: 12px system-ui; color: var(--text-muted); }
+[data-design="noir"] [data-screen="budgets"] .severity-accent { border-radius: 12px 12px 2px 2px; border-top: 3px solid var(--severity-line); }
+[data-design="noir"] [data-screen="calendar"] main { background-image: linear-gradient(var(--gridline) 1px, transparent 1px); background-size: 100% 48px; }
+@media (min-width: 1024px) {
+  [data-design="noir"] .finance-shell main { padding: 48px 40px; }
+}
+@media (max-width: 639px) {
+  [data-design="noir"] .vault-runway { padding: 16px; }
+  [data-design="noir"] .stat-tile { min-height: 140px; }
+  [data-design="noir"] .vault-ledger > li { padding-inline: 4px; }
+  [data-design="noir"] .merchant-mark { width: 28px; height: 28px; font-size: 9px; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .vault-nav-link { transition: background 180ms ease, color 180ms ease; }
+  [data-design="noir"] .goal-vault { transition: transform 200ms ease, box-shadow 200ms ease; }
+  [data-design="noir"] .goal-vault:hover { transform: translateY(-3px); box-shadow: var(--shadow-raised); }
+}
+
 /*
  * Visualisation and surface tokens.
  *

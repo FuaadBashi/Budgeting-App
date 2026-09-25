@@ -7,6 +7,12 @@ it is the contract, and where code disagrees with it that is a defect, not a var
 
 ## 1. Where things stand
 
+**Vault visual refresh, 25 September.** Vault Noir now has a labelled desktop sidebar,
+an editorial dashboard with a prominent cash-runway panel, merchant initials in the ledger,
+and circular savings-goal progress. Responsive page headings and surfaces share that language.
+Existing appearance choices remain available while this direction is reviewed. This is a
+presentation change; financial calculations and API contracts are unchanged.
+
 | Phase | Scope | Status |
 |---|---|---|
 | 0 | Rulebook, decisions | ✅ |

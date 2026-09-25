@@ -164,7 +164,8 @@ export function GoalManager({
 function GoalCard({ goal }: { goal: Goal }) {
   const pct = goal.progress === null ? 0 : Math.min(1, goal.progress);
   return (
-    <li className="card p-5">
+    <li className="card goal-vault p-5">
+      <div className="goal-dial" style={{ background: `conic-gradient(var(--accent) ${pct * 360}deg, var(--surface-2) 0deg)` }} aria-label={`${Math.round(pct * 100)}% of target`} role="img"><span>{Math.round(pct * 100)}<small>%</small></span></div>
       <div className="flex items-baseline justify-between gap-3">
         <h3 className="font-medium" style={{ color: "var(--text-primary)" }}>
           {goal.name}

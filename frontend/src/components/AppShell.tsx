@@ -53,7 +53,7 @@ const MOBILE_PRIMARY = new Set(["dashboard", "transactions", "budgets", "calenda
 //: OWN fixed chrome. Field's masthead is `sticky`, not `fixed`, so it needs
 //: none of this -- it already pushes content down by taking up flow space.
 const CONTENT_OFFSET: Record<Design, string> = {
-  noir: "lg:pl-16",
+  noir: "lg:pl-60",
   field: "",
   raw: "lg:pb-28",
   console: "lg:pl-14",
@@ -64,8 +64,8 @@ export function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
 
   return (
-    <div className="min-h-dvh" style={{ background: "var(--page-plane)" }}>
-      {design === "noir" && <RailNav design="noir" />}
+    <div className="finance-shell min-h-dvh" data-screen={pathname.split('/')[1] || 'dashboard'} style={{ background: "var(--page-plane)" }}>
+      {design === "noir" && <VaultNav />}
       {design === "console" && <RailNav design="console" />}
       {design === "raw" && <DockNav />}
 
@@ -108,6 +108,33 @@ export function AppShell({ children }: { children: ReactNode }) {
         <PreferencesPanel className="hidden lg:block" />
       )}
     </div>
+  );
+}
+
+function VaultNav() {
+  const pathname = usePathname();
+  return (
+    <aside className="vault-nav fixed inset-y-0 left-0 z-20 hidden w-60 flex-col overflow-y-auto p-5 lg:flex">
+      <Link href="/" className="vault-brand" aria-label="Personal Finance OS dashboard">
+        <span className="vault-mark" aria-hidden>V</span>
+        <span>VAULT<span className="vault-brand-caption">PERSONAL FINANCE OS</span></span>
+      </Link>
+      <p className="section-label mb-3 mt-10">Your workspace</p>
+      <nav aria-label="Primary" className="space-y-1">
+        {NAV.map((item, index) => (
+          <Link key={item.key} href={item.href!} className="vault-nav-link" aria-current={(item.href === '/' ? pathname === '/' : pathname.startsWith(item.href!)) ? 'page' : undefined}>
+            {item.icon}<span>{item.label}</span><span className="vault-nav-index" aria-hidden>{String(index + 1).padStart(2, '0')}</span>
+          </Link>
+        ))}
+      </nav>
+      <div className="mt-auto space-y-4 pt-8">
+        <TransactionEntry className="w-full justify-center" />
+        <div className="flex items-center justify-between border-t pt-4" style={{ borderColor: 'var(--hairline)' }}>
+          <span className="section-label">Make room for life.</span>
+          <PreferencesPanel placement="rail" />
+        </div>
+      </div>
+    </aside>
   );
 }
 

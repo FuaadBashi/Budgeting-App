@@ -121,7 +121,7 @@ export default async function Dashboard() {
 
   return (
     <AppShell>
-      <main className="mx-auto max-w-5xl space-y-8 px-4 py-6 sm:px-6 lg:py-10">
+      <main className="vault-dashboard mx-auto max-w-5xl space-y-8 px-4 py-6 sm:px-6 lg:py-10">
         {/* Stacked on narrow screens: side by side, the subtitle runs into the
             net-worth block well before it wraps. */}
         <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
@@ -130,7 +130,7 @@ export default async function Dashboard() {
               className="font-display text-xl sm:text-2xl"
               style={{ color: "var(--text-primary)" }}
             >
-              Dashboard
+              Your money. In focus.
             </h1>
             <p className="text-sm" style={{ color: "var(--text-muted)" }}>
               Commitments counted through {shortDate(sts.window_end)}
@@ -158,7 +158,7 @@ export default async function Dashboard() {
 
         {/* Plan section 11.1: the recommended top row, in the order it specifies.
             Each cell staggers in on its own delay -- see .stagger-in, noir only. */}
-        <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <section className="vault-stats grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <div className="stagger-in sm:col-span-2 lg:col-span-2" style={{ "--i": 0 } as CSSProperties}>
             <StatTile
               lead
@@ -299,8 +299,8 @@ export default async function Dashboard() {
         )}
 
         {calendar && (
-          <section>
-            <h2 className="section-label mb-3">Projected balance</h2>
+          <section className="vault-runway">
+            <div className="mb-4 flex items-end justify-between gap-4"><div><p className="section-label mb-2">The road ahead</p><h2 className="font-display text-2xl">Your cash runway</h2></div><span className="section-label">90-day outlook</span></div>
             <div className="card stagger-in p-5" style={{ "--i": 5 } as CSSProperties}>
               <p className="mb-4 text-sm" style={{ color: "var(--text-secondary)" }}>
                 {calendar.first_breach_date ? (

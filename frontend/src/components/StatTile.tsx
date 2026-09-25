@@ -38,7 +38,7 @@ export function StatTile({
   footnote?: string;
 }) {
   return (
-    <div className={`card p-5 ${lead ? "sm:p-6" : ""}`}>
+    <div className={`card stat-tile p-5 ${lead ? "stat-lead sm:p-6" : ""}`}>
       <div className="section-label">{label}</div>
       <div
         className={`font-display mt-2 ${
