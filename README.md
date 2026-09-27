@@ -14,6 +14,12 @@ Three documents govern the code:
 
 `docs/BUDGET_ENGINE_SPEC.md` is the derived design spec for Phase 3, kept for its worked examples.
 
+## Review guide
+
+Start with [the financial rulebook](docs/FINANCIAL_RULEBOOK.md), follow a transaction through
+[the API](backend/app/api) and [ledger models](backend/app/models/ledger.py), then inspect
+[the invariant tests](backend/tests). [The running guide](docs/RUNNING.md) covers local operation.
+
 ## Current state
 
 **Phases 0–9 and 11 complete; Phase 10 is backups-done, deploy-yours.** It replaces a
@@ -45,7 +51,7 @@ nothing derived is stored as editable data.
 
 ## Setup
 
-Requires PostgreSQL 17 and Node 20+.
+Requires Python 3.12+, PostgreSQL 17 and Node 20+. Run each command block below from the repository root in a fresh terminal, or return there between blocks; `cd backend` and `cd frontend` are sibling paths.
 
 ```bash
 brew services start postgresql@17
