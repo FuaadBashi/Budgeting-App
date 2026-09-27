@@ -21,11 +21,8 @@ llm = ["anthropic>=0.40"]
 #: Only needed to sign Enable Banking requests. Without it bank sync stays off.
 bank = ["pyjwt[crypto]>=2.8"]
 
-[tool.setuptools]
-# Named explicitly. Flat-layout auto-discovery treats every top-level directory
-# as a package, so the backups/ directory the scheduler creates broke editable
-# installs the moment it first appeared.
-packages = ["app"]
+[tool.setuptools.packages.find]
+include = ["app", "app.*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
