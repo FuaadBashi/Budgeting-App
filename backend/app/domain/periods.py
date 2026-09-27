@@ -70,15 +70,16 @@ def _resolve(period: BudgetPeriod, d: date, anchor: date | None) -> Period:
         start = d - timedelta(days=d.weekday())
         return Period(start, start + timedelta(days=6))
 
-    if period is BudgetPeriod.FORTNIGHTLY:
+    if period in (BudgetPeriod.FORTNIGHTLY, BudgetPeriod.THIRTY_DAY):
         if anchor is None:
-            raise ValueError("fortnightly budgets require an anchor_date")
+            raise ValueError(f"{period.value} budgets require an anchor_date")
         # Floor division, deliberately. int((d - anchor).days / 14) truncates
         # toward zero, so for any date before the anchor it returns k=0 and hands
         # back an interval that does not contain d.
-        k = (d - anchor).days // 14
-        start = anchor + timedelta(days=14 * k)
-        return Period(start, start + timedelta(days=13))
+        length = 14 if period is BudgetPeriod.FORTNIGHTLY else 30
+        k = (d - anchor).days // length
+        start = anchor + timedelta(days=length * k)
+        return Period(start, start + timedelta(days=length - 1))
 
     if period is BudgetPeriod.MONTHLY:
         return _month_period(d.year, d.month)
@@ -115,6 +116,8 @@ def _step(period: BudgetPeriod, p: Period, n: int, anchor: date | None) -> Perio
         return period_for(period, p.start + timedelta(days=7 * n))
     if period is BudgetPeriod.FORTNIGHTLY:
         return period_for(period, p.start + timedelta(days=14 * n), anchor)
+    if period is BudgetPeriod.THIRTY_DAY:
+        return period_for(period, p.start + timedelta(days=30 * n), anchor)
     if period is BudgetPeriod.MONTHLY:
         index = p.start.year * 12 + (p.start.month - 1) + n
         return _month_period(index // 12, index % 12 + 1)

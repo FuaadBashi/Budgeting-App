@@ -67,8 +67,8 @@ class Budget(TimestampedUUID, Base):
     period: Mapped[BudgetPeriod] = mapped_column(
         Enum(BudgetPeriod, name="budget_period", native_enum=False), nullable=False
     )
-    # Fortnightly has no natural calendar anchor, so it needs an explicit epoch
-    # (rulebook section 8). Required for fortnightly, forbidden otherwise -- an
+    # Fortnightly and 30-day cycles need an explicit epoch
+    # (rulebook section 8). Required for these cycles, forbidden otherwise -- an
     # accepted-and-ignored anchor on a monthly budget is worse than a rejected
     # one, because the user believes their month resets on the 25th.
     anchor_date: Mapped[date | None] = mapped_column(Date, nullable=True)

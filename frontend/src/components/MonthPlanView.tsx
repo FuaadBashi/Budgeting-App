@@ -30,6 +30,7 @@ const PER_PERIOD: Record<string, string> = {
   daily: "a day",
   weekly: "a week",
   fortnightly: "a fortnight",
+  thirty_day: "30 days",
   monthly: "a month",
 };
 

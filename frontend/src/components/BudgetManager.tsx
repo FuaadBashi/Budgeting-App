@@ -16,6 +16,7 @@ const PERIODS = [
   { value: "daily", label: "Daily" },
   { value: "weekly", label: "Weekly (Mon–Sun)" },
   { value: "fortnightly", label: "Fortnightly" },
+  { value: "thirty_day", label: "Every 30 days" },
   { value: "monthly", label: "Monthly" },
   { value: "quarterly", label: "Quarterly" },
   { value: "annual", label: "Annual" },
@@ -39,7 +40,7 @@ const ROLLOVER = [
  * Budget list and creation.
  *
  * The form mirrors the API's configuration rules rather than letting the server
- * reject them: the anchor date appears only for fortnightly (where it is
+ * reject them: the anchor date appears only for anchored cycles (where it is
  * required and forbidden elsewhere), and rollover disappears for daily budgets
  * (where a carry into the next day is just a weekly budget with extra steps).
  * A field that exists but is ignored is worse than one that is not offered —
@@ -60,7 +61,7 @@ export function BudgetManager({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const isFortnightly = period === "fortnightly";
+  const needsAnchor = period === "fortnightly" || period === "thirty_day";
   const isDaily = period === "daily";
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
@@ -76,7 +77,7 @@ export function BudgetManager({
         start_date: String(data.get("start_date")),
         amount_minor: parseMajorToMinor(String(data.get("amount"))),
         rollover_policy: isDaily ? "none" : String(data.get("rollover_policy")),
-        anchor_date: isFortnightly ? String(data.get("anchor_date")) : null,
+        anchor_date: needsAnchor ? String(data.get("anchor_date")) : null,
         end_date: data.get("end_date") || null,
         category_id: data.get("category_id") || null,
       });
@@ -134,11 +135,11 @@ export function BudgetManager({
               <input name="start_date" type="date" required className="form-control" />
             </Field>
 
-            {isFortnightly && (
+            {needsAnchor && (
               <Field label="Anchor date">
                 <input name="anchor_date" type="date" required className="form-control" />
                 <span className="mt-1 block text-xs" style={{ color: "var(--text-muted)" }}>
-                  A fortnight has no natural calendar start, so it needs an explicit one.
+                  The first day of your budget cycle. Set an end date for a one-off plan.
                 </span>
               </Field>
             )}

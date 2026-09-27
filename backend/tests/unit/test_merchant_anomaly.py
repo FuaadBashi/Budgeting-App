@@ -428,7 +428,7 @@ def test_the_merchant_index_migration_left_the_constraint_counts_alone(session):
     triggers = set(
         session.scalars(text("SELECT tgname FROM pg_trigger WHERE NOT tgisinternal"))
     )
-    assert {"ck_posting_currency_gbp", "ck_budget_anchor_iff_fortnightly"} <= checks
+    assert {"ck_posting_currency_gbp", "ck_budget_anchor_iff_anchored"} <= checks
     assert {"postings_balance_check", "transactions_single_correction_check"} <= triggers
 
 

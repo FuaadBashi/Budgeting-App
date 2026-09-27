@@ -254,10 +254,12 @@ shortfall. Goals are never silently shown as simultaneously achievable.
 
 ### Periods
 
-Periods are `daily`, `weekly`, `fortnightly`, `monthly`, `quarterly`, `annual`.
+Periods are `daily`, `weekly`, `fortnightly`, `thirty_day`, `monthly`, `quarterly`, `annual`.
 
 - Week starts **Monday** (ISO-8601).
 - Fortnightly requires an explicit `anchor_date`; periods count forward from it in 14-day steps.
+- Thirty-day requires an explicit `anchor_date`; periods count in exact 30-day steps,
+  independent of month boundaries. Set `end_date` to the 30th day for a one-off plan.
 - Monthly periods run calendar month, first to last day inclusive.
 - A period is a closed date interval `[start, end]` in the reporting timezone (§9).
 

@@ -27,10 +27,11 @@ class BudgetIn(BaseModel):
         The database enforces all of this too; catching it here turns a 500 into
         a 422 that names the field.
         """
-        if self.period is BudgetPeriod.FORTNIGHTLY and self.anchor_date is None:
-            raise ValueError("anchor_date is required for fortnightly budgets")
-        if self.period is not BudgetPeriod.FORTNIGHTLY and self.anchor_date is not None:
-            raise ValueError("anchor_date is only valid for fortnightly budgets")
+        anchored = self.period in (BudgetPeriod.FORTNIGHTLY, BudgetPeriod.THIRTY_DAY)
+        if anchored and self.anchor_date is None:
+            raise ValueError("anchor_date is required for fortnightly and thirty-day budgets")
+        if not anchored and self.anchor_date is not None:
+            raise ValueError("anchor_date is only valid for fortnightly and thirty-day budgets")
         if (
             self.period is BudgetPeriod.DAILY
             and self.rollover_policy is not RolloverPolicy.NONE

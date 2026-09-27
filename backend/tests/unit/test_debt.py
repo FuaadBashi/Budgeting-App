@@ -525,7 +525,7 @@ def test_the_debt_terms_migration_left_the_earlier_constraints_in_place(session)
         )
     )
     assert {
-        "ck_budget_anchor_iff_fortnightly",
+        "ck_budget_anchor_iff_anchored",
         "ck_budget_end_after_start",
         "ck_candidate_accepted_has_transaction",
         "ck_category_not_self_parent",

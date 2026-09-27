@@ -7,6 +7,10 @@ it is the contract, and where code disagrees with it that is a defect, not a var
 
 ## 1. Where things stand
 
+**Anchored 30-day budgets.** Migration 0014 adds support for exact 30-day cycles in
+the existing budget engine and creation form. These do not reset at calendar month-end.
+The month-plan view still reports calendar months and prorates overlapping budget cycles.
+
 **Vault visual refresh, 25 September.** Vault Noir now has a labelled desktop sidebar,
 an editorial dashboard with a prominent cash-runway panel, merchant initials in the ledger,
 and circular savings-goal progress. Responsive page headings and surfaces share that language.
@@ -119,7 +123,7 @@ live; routes only translate to and from integer minor units.
 - `L3` — a transaction cannot be both voided and reversed (deferred trigger)
 - `G1` — goal attribution cannot exceed its savings account balance (deferred trigger)
 - `B-CFG1/2` — daily budgets cannot roll over; a revision cannot predate its budget
-- CHECKs — anchor iff fortnightly, end ≥ start, no self-parent category, GBP-only postings
+- CHECKs — anchor iff fortnightly or thirty-day, end ≥ start, no self-parent category, GBP-only postings
 
 ### Frontend
 

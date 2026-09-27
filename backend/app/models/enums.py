@@ -87,6 +87,7 @@ class BudgetPeriod(enum.StrEnum):
     DAILY = "daily"
     WEEKLY = "weekly"
     FORTNIGHTLY = "fortnightly"
+    THIRTY_DAY = "thirty_day"
     MONTHLY = "monthly"
     QUARTERLY = "quarterly"
     ANNUAL = "annual"
