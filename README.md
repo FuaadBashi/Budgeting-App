@@ -1,5 +1,7 @@
 # Personal Finance OS
 
+[![CI](https://github.com/FuaadBashi/Budgeting-App/actions/workflows/ci.yml/badge.svg)](https://github.com/FuaadBashi/Budgeting-App/actions/workflows/ci.yml)
+
 A ledger-first personal finance platform: track transactions, plan against budgets and goals, and
 see what upcoming commitments do to your cash. Built from the *Personal Finance OS* project plan,
 with the accounting model settled before anything else.
@@ -96,6 +98,9 @@ Interactive API docs are at **http://localhost:8000/docs**.
 ```bash
 cd backend && ./.venv/bin/python -m pytest -q
 ```
+
+CI runs the same suite on every push against Postgres 17, and lints, tests and builds the
+frontend.
 
 The suite is organised around the rulebook's named invariants rather than around modules — `L1`
 postings sum to zero, `N1` transfers preserve net worth, `S1` no double-counting of fulfilled
