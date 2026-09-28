@@ -1,5 +1,7 @@
 "use client";
 
+import { FieldHelp } from "@/components/ExplainMode";
+
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { InlineEditor } from "@/components/InlineEditor";
@@ -304,6 +306,7 @@ function Field({
         )}
       </span>
       {children}
+      <FieldHelp label={label} />
     </label>
   );
 }

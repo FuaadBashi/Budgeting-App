@@ -1,5 +1,7 @@
 "use client";
 
+import { FieldHelp } from "@/components/ExplainMode";
+
 import Link from "next/link";
 import { useEffect, useMemo, useState, useSyncExternalStore, type FormEvent, type ReactNode } from "react";
 import { createPortal } from "react-dom";
@@ -523,6 +525,7 @@ function Field({ label, optional = false, children }: { label: string; optional?
         {optional && <span className="text-xs font-normal" style={{ color: "var(--text-muted)" }}>Optional</span>}
       </span>
       {children}
+      <FieldHelp label={label} />
     </label>
   );
 }

@@ -16,6 +16,7 @@ import {
 } from "@/lib/api";
 import { formatMinor, parseMajorToMinor } from "@/lib/money";
 import { ErrorLine, Field, PrimaryButton, SecondaryButton, SectionHeader } from "@/components/ui";
+import { ExplainMetric } from "@/components/ExplainMode";
 
 const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 const FREQUENCY_LABEL: Record<Frequency, string> = {
@@ -79,12 +80,24 @@ export function MonthPlanView({
             <p className="mt-2 text-sm" style={{ color: "var(--text-secondary)" }}>
               {over ? "Over-assigned by" : "Left to assign"}
             </p>
-            <p
+            <div
               className="tnum font-display text-3xl sm:text-4xl"
               style={{ color: over ? "var(--status-critical)" : plan.unassigned_minor === 0 ? "var(--success-text)" : "var(--text-primary)" }}
             >
-              {formatMinor(Math.abs(plan.unassigned_minor))}
-            </p>
+              <ExplainMetric label="Unassigned plan income" result={plan.unassigned_minor} explanation={{
+                description: "Expected income left to allocate—not cash available to spend. A negative result is displayed above as the size of the over-assignment.",
+                formula: "Expected income − counted bills − budgets − goal contributions",
+                rows: [
+                  { label: "Expected income", value: plan.income_planned_minor },
+                  { label: "Bills not already covered by budgets", value: -plan.bills_minor },
+                  { label: "Budget allocations", value: -plan.budgets_minor },
+                  { label: "Goal contributions", value: -plan.goals_minor },
+                ],
+                note: "Non-calendar budgets are prorated to this month. Received income is shown separately for comparison and is not added to expected income.",
+              }}>
+                {formatMinor(Math.abs(plan.unassigned_minor))}
+              </ExplainMetric>
+            </div>
             <p className="mt-1 text-xs" style={{ color: "var(--text-muted)" }}>
               of {formatMinor(plan.income_planned_minor)} expected ·{" "}
               {formatMinor(plan.income_received_minor)} received so far

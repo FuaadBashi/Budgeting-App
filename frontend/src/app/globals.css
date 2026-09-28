@@ -55,6 +55,21 @@
   [data-design="noir"] .goal-vault:hover { transform: translateY(-3px); box-shadow: var(--shadow-raised); }
 }
 
+/* Calculations need reading width, not a narrow KPI column. Off-mode keeps
+   the original dashboard; phone cards remain a single column. */
+@media (min-width: 640px) {
+  [data-explain="on"] .vault-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  [data-explain="on"] .vault-stats > div {
+    grid-column: span 1;
+  }
+  [data-explain="on"] .vault-stats > div:first-child,
+  [data-explain="on"] .vault-stats > div:last-child {
+    grid-column: span 2;
+  }
+}
+
 /*
  * Visualisation and surface tokens.
  *
@@ -871,6 +886,23 @@ body {
    were silently ignored the same way. Utilities must be able to adjust a
    control; that is what they are for. */
 @layer components {
+  .explain-trigger {
+    min-height: 44px;
+  }
+  .explain-trigger:focus-visible,
+  .explain-toggle:focus-visible,
+  .explain-guide > summary:focus-visible {
+    outline: 2px solid var(--accent-text);
+    outline-offset: 4px;
+    border-radius: var(--radius-sm);
+  }
+  .explain-metric .font-sans {
+    letter-spacing: normal;
+  }
+  .explain-metric dt,
+  .explain-guide dd {
+    overflow-wrap: anywhere;
+  }
   .form-control {
     width: 100%;
     min-height: 2.75rem;

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { useEffect, useMemo, useState, type CSSProperties, type FormEvent, type ReactNode } from "react";
 import { PreferencesPanel } from "@/components/PreferencesPanel";
+import { ExplainToolbar, useExplainMode } from "@/components/ExplainMode";
 import { TransactionEntry } from "@/components/TransactionEntry";
 import { useDesign, type Design } from "@/lib/design";
 
@@ -62,9 +63,10 @@ const CONTENT_OFFSET: Record<Design, string> = {
 export function AppShell({ children }: { children: ReactNode }) {
   const { design } = useDesign();
   const pathname = usePathname();
+  const explain = useExplainMode();
 
   return (
-    <div className="finance-shell min-h-dvh" data-screen={pathname.split('/')[1] || 'dashboard'} style={{ background: "var(--page-plane)" }}>
+    <div className="finance-shell min-h-dvh" data-explain={explain ? "on" : "off"} data-screen={pathname.split('/')[1] || 'dashboard'} style={{ background: "var(--page-plane)" }}>
       {design === "noir" && <VaultNav />}
       {design === "console" && <RailNav design="console" />}
       {design === "raw" && <DockNav />}
@@ -90,6 +92,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         </header>
 
         {design === "console" && <CommandBar />}
+        <ExplainToolbar />
 
         {/* Bottom padding clears the mobile nav bar. Keyed on the route so
             noir's route-fade keyframe replays on every navigation -- the

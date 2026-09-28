@@ -120,10 +120,24 @@ export default async function AnalyticsPage({
         </header>
 
         <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <StatTile label="Income" value={period.income_minor} />
-          <StatTile label="Spending" value={period.expense_minor} />
+          <StatTile label="Income" value={period.income_minor} explanation={{
+            description: "Actual recorded income in the selected dates, not expected payments or opening balances.",
+            formula: "Sum of posted income within the reporting period",
+            note: `Reporting dates: ${period.start} to ${period.end}. Transfers between your own accounts do not create income.`,
+          }} />
+          <StatTile label="Spending" value={period.expense_minor} explanation={{
+            description: "Net recorded expenses for this reporting period; saving transfers are not ordinary spending.",
+            formula: "Sum of category spending, net of applicable refunds and reimbursements",
+            rows: period.by_category.map(c => ({ label: c.name, value: c.amount_minor })),
+          }} />
           <StatTile
             label="Savings rate"
+            explanation={{
+              description: "The share of income not consumed by spending—not the percentage transferred into savings.",
+              formula: "(Income − spending) ÷ income × 100",
+              rows: [{ label: "Income", value: period.income_minor }, { label: "Spending deducted", value: -period.expense_minor }],
+              note: period.savings_rate === null ? "No income was recorded, so division by income is undefined. The dash is not a 0% rate." : "The displayed percentage is rounded to a whole percent.",
+            }}
             // The standard definition: what share of income was not consumed.
             // Null is a distinct state -- no income is not the same as 0% saved.
             value={
@@ -146,6 +160,11 @@ export default async function AnalyticsPage({
           />
           <StatTile
             label="Set aside"
+            explanation={{
+              description: "Recorded net savings and investment contributions, not an estimate of what you could save.",
+              formula: "Recorded savings and investment movements in the reporting period",
+              note: "Moving your own money into savings is a transfer, not new income. Planned goal contributions are not counted as transfers already made.",
+            }}
             value={period.saved_minor}
             tone={period.saved_minor > 0 ? "good" : "neutral"}
             support={
