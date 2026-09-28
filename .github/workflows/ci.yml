@@ -1,0 +1,74 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  backend:
+    # The ledger rules live in Postgres -- the deferred L1 trigger and the CHECKs -- so the suite
+    # needs the real database, at the version the launcher uses locally (postgresql@17).
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: budget
+          POSTGRES_PASSWORD: ci-only-password
+          POSTGRES_DB: budgetapp_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U budget -d budgetapp_test"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      PG: postgresql://budget:ci-only-password@localhost:5432
+      # conftest rebuilds this schema from the migrations at the start of every run.
+      TEST_DATABASE_URL: postgresql+psycopg://budget:ci-only-password@localhost:5432/budgetapp_test
+      # app.db still builds an engine for the dev database at import. It gets an empty stand-in,
+      # and the last step fails if the suite wrote to it -- the backup timer once did exactly that.
+      DATABASE_URL: postgresql+psycopg://budget:ci-only-password@localhost:5432/budgetapp
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: backend/pyproject.toml
+      - name: Install
+        # pypdf is only needed by the two PDF-export tests, which skip without it.
+        run: python -m pip install -e '.[dev]' pypdf
+      - name: Create the empty stand-in dev database
+        run: psql "$PG/postgres" -c "CREATE DATABASE budgetapp"
+      - name: Test
+        run: python -m pytest -q
+      - name: Check the suite never wrote to the dev database
+        run: |
+          tables=$(psql "$PG/budgetapp" -Atc "SELECT count(*) FROM information_schema.tables WHERE table_schema = 'public'")
+          test "$tables" = 0 || { echo "The suite created $tables tables in the dev database"; exit 1; }
+
+  frontend:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: npm test
+      - name: Build
+        # Also type-checks every page.
+        run: npm run build
