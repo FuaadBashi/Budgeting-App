@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { ButtonHTMLAttributes, ReactNode } from "react";
+import { FieldHelp } from "@/components/ExplainMode";
 
 /**
  * The small pieces every form and panel repeats. Each screen used to carry its
@@ -30,6 +31,7 @@ export function Field({
         )}
       </span>
       {children}
+      <FieldHelp label={label} />
       {hint && (
         <span className="mt-1 block text-xs font-normal" style={{ color: "var(--text-muted)" }}>
           {hint}

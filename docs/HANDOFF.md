@@ -7,6 +7,15 @@ it is the contract, and where code disagrees with it that is a defect, not a var
 
 ## 1. Where things stand
 
+**Explain mode.** A persistent “Explain this screen” switch in `AppShell` adds
+route-specific guides on all eleven screens, contextual form help, and expandable
+calculations on dashboard, budget and analytics figures. `ExplainMode.tsx` owns
+the hydration-safe, storage-optional preference; `lib/explanations.ts` owns help copy;
+`lib/metric-explanations.ts` formats existing API results, never recomputes financial
+figures. Optional detailed traces are used only when their total matches the displayed
+snapshot. Turning the mode off removes the added help, not existing financial warnings.
+Run `cd frontend && npm test` for the presentation-builder regression tests.
+
 **Anchored 30-day budgets.** Migration 0014 adds support for exact 30-day cycles in
 the existing budget engine and creation form. These do not reset at calendar month-end.
 The month-plan view still reports calendar months and prorates overlapping budget cycles.

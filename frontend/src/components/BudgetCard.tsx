@@ -3,6 +3,8 @@ import { AnimatedAmount } from "@/components/AnimatedAmount";
 import { BudgetMeter, type Severity } from "@/components/BudgetMeter";
 import type { BudgetPeriod, MerchantAnomaly } from "@/lib/api";
 import { formatMinor, formatSignedMinor } from "@/lib/money";
+import { ExplainMetric, HelpText } from "@/components/ExplainMode";
+import { budgetExplanation } from "@/lib/metric-explanations";
 
 // Extra visual weight for the two severities that need attention -- "ok"
 // carries none, so a page of healthy budgets stays as quiet as the rest of
@@ -133,6 +135,8 @@ export function BudgetCard({ budget, index }: { budget: BudgetPeriod; index?: nu
           className="font-display text-2xl"
           style={{ color: "var(--text-primary)" }}
         >
+          <ExplainMetric label={`${budget.budget_name} allowance`} explanation={budgetExplanation(budget)}
+            result={budget.presented_allowance_minor ?? budget.remaining_minor}>
           <AnimatedAmount
             minor={
               budget.presented_allowance_minor !== null
@@ -141,6 +145,7 @@ export function BudgetCard({ budget, index }: { budget: BudgetPeriod; index?: nu
             }
             className=""
           />
+          </ExplainMetric>
         </div>
         {budget.binding_constraint === "safe_to_spend" && (
           <p className="mt-1 text-xs" style={{ color: "var(--status-warning)" }}>
@@ -155,6 +160,7 @@ export function BudgetCard({ budget, index }: { budget: BudgetPeriod; index?: nu
         expectedToDate={closed ? null : budget.expected_to_date_minor}
         severity={severity}
       />
+      <HelpText>The meter compares recorded spending with allowance plus rollover. Its pace marker is where spending would be if spread evenly over the period.</HelpText>
 
       {/* Rows on narrow screens, columns once there is room. Three columns of
           seven-figure amounts do not fit 375px: the values were clipped mid-digit,

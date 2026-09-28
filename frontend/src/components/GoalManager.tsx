@@ -1,5 +1,7 @@
 "use client";
 
+import { FieldHelp, HelpText } from "@/components/ExplainMode";
+
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { createGoal, updateGoal, type Account, type Goal } from "@/lib/api";
@@ -250,6 +252,7 @@ function GoalCard({ goal }: { goal: Goal }) {
         />
       </div>
 
+      <HelpText>Progress is attributed savings ÷ target. Monthly is a planned contribution, not money already saved. Completion assumes that contribution continues; it does not check whether you can afford it.</HelpText>
       <dl className="mt-3 flex flex-wrap gap-x-6 gap-y-1 text-xs">
         <div className="flex gap-1.5">
           <dt style={{ color: "var(--text-muted)" }}>Monthly</dt>
@@ -307,6 +310,7 @@ function Field({
         )}
       </span>
       {children}
+      <FieldHelp label={label} />
     </label>
   );
 }

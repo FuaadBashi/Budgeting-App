@@ -6,6 +6,8 @@ import { BalanceCurve } from "@/components/BalanceCurve";
 import { BudgetCard } from "@/components/BudgetCard";
 import { SetupChecklist } from "@/components/SetupChecklist";
 import { StatTile } from "@/components/StatTile";
+import { ExplainMetric, HelpText } from "@/components/ExplainMode";
+import { safeExplanation, dailyExplanation, savingsExplanation, netWorthExplanation } from "@/lib/metric-explanations";
 import {
   getAccounts,
   getBudgets,
@@ -13,6 +15,9 @@ import {
   getNetWorth,
   getRecovery,
   getSafeToSpend,
+  explainSafeToSpend,
+  explainNetWorth,
+  type Derivation,
   type Account,
   type BudgetPeriod,
   type FinancialCalendar,
@@ -48,16 +53,20 @@ export default async function Dashboard() {
   let recovery: Recovery | null = null;
   let calendar: FinancialCalendar | null = null;
   let netWorth: NetWorth | null = null;
+  let safeTrace: Derivation | null = null;
+  let worthTrace: Derivation | null = null;
   let error: string | null = null;
 
   try {
-    [sts, accounts, budgets, recovery, calendar, netWorth] = await Promise.all([
+    [sts, accounts, budgets, recovery, calendar, netWorth, safeTrace, worthTrace] = await Promise.all([
       getSafeToSpend(),
       getAccounts(),
       getBudgets(),
       getRecovery(),
       getCalendar(),
       getNetWorth(),
+      explainSafeToSpend().catch(() => null),
+      explainNetWorth().catch(() => null),
     ]);
   } catch (e) {
     error = e instanceof Error ? e.message : "Unknown error";
@@ -143,7 +152,9 @@ export default async function Dashboard() {
                 className="text-lg font-semibold"
                 style={{ color: "var(--text-primary)" }}
               >
-                <AnimatedAmount minor={netWorth.net_worth_minor} />
+                <ExplainMetric label="Net worth" result={netWorth.net_worth_minor} explanation={netWorthExplanation(netWorth.net_worth_minor, worthTrace)}>
+                  <AnimatedAmount minor={netWorth.net_worth_minor} />
+                </ExplainMetric>
               </div>
             </div>
           )}
@@ -163,6 +174,7 @@ export default async function Dashboard() {
             <StatTile
               lead
               label="Safe to spend"
+              explanation={safeExplanation(sts, safeTrace)}
               value={sts.safe_to_spend_minor}
               tone={negative ? "critical" : "neutral"}
               support={
@@ -181,6 +193,7 @@ export default async function Dashboard() {
           <div className="stagger-in" style={{ "--i": 1 } as CSSProperties}>
             <StatTile
               label="Safe to spend today"
+              explanation={dailyExplanation(budgets)}
               value={daily !== null ? daily : "—"}
               tone={daily !== null && daily <= 0 ? "critical" : "neutral"}
               support={
@@ -196,6 +209,7 @@ export default async function Dashboard() {
           <div className="stagger-in" style={{ "--i": 2 } as CSSProperties}>
             <StatTile
               label="Projected month-end savings"
+              explanation={savingsExplanation(recovery)}
               value={recovery && !nothingPlanned ? recovery.projected_contribution_total_minor : "—"}
               tone={
                 nothingPlanned
@@ -224,6 +238,7 @@ export default async function Dashboard() {
                 >
                   {nextOutflow ? nextOutflow.name : "Nothing committed"}
                 </div>
+                <HelpText>The next recorded cash outflow on the calendar. Paid bills are excluded; bills without entered due dates cannot appear here.</HelpText>
               </div>
               {nextOutflow && (
                 <div className="text-right">

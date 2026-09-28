@@ -1,5 +1,7 @@
 "use client";
 
+import { HelpText } from "@/components/ExplainMode";
+
 import { useId, type CSSProperties } from "react";
 import { PICK_PROMPT, useChartSelection } from "@/lib/chartSelection";
 import type { CalendarDay } from "@/lib/api";
@@ -116,6 +118,7 @@ export function BalanceCurve({
 
   return (
     <figure className="m-0">
+      <HelpText>Daily balance = previous closing balance + expected income − recorded committed payments. The dashed line is your protected cash buffer. Everyday variable spending and bills not entered are excluded. Tap the curve or focus it and use arrow keys to inspect a day.</HelpText>
       <svg
         viewBox={`0 0 ${W} ${H}`}
         {...selection.svgProps(

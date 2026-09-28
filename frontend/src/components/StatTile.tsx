@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { AnimatedAmount } from "@/components/AnimatedAmount";
 import type { Minor } from "@/lib/money";
+import { ExplainMetric, type Explanation } from "@/components/ExplainMode";
 
 type Tone = "neutral" | "good" | "warning" | "critical";
 
@@ -29,6 +30,7 @@ export function StatTile({
   lead = false,
   support,
   footnote,
+  explanation,
 }: {
   label: string;
   value: Minor | string;
@@ -36,6 +38,7 @@ export function StatTile({
   lead?: boolean;
   support?: ReactNode;
   footnote?: string;
+  explanation?: Explanation;
 }) {
   return (
     <div className={`card stat-tile p-5 ${lead ? "stat-lead sm:p-6" : ""}`}>
@@ -46,7 +49,11 @@ export function StatTile({
         }`}
         style={{ color: TONE_INK[tone] }}
       >
-        {typeof value === "string" ? value : <AnimatedAmount minor={value} className="" />}
+        {explanation ? (
+          <ExplainMetric label={label} explanation={explanation} result={value}>
+            {typeof value === "string" ? value : <AnimatedAmount minor={value} className="" />}
+          </ExplainMetric>
+        ) : typeof value === "string" ? value : <AnimatedAmount minor={value} className="" />}
       </div>
       {support && (
         <div className="mt-2 text-xs" style={{ color: "var(--text-secondary)" }}>
