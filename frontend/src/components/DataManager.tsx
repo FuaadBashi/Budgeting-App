@@ -223,6 +223,7 @@ function RestorePanel({ empty }: { empty: boolean }) {
           ref={input}
           type="file"
           accept="application/json,.json"
+          aria-label="Backup file to restore"
           onChange={(e) => {
             const chosen = e.target.files?.[0];
             if (chosen) onPick(chosen);

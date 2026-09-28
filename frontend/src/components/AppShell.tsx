@@ -410,7 +410,9 @@ function CommandBar() {
 
   return (
     <div className="relative hidden px-8 pt-6 lg:block">
-      <form onSubmit={onSubmit} className="flex items-center gap-2 rounded-[var(--radius-sm)] px-3 py-2" style={{ background: "var(--surface-1)", boxShadow: "inset 0 0 0 var(--border-w) var(--hairline)" }}>
+      {/* role="search" makes the bar a landmark; outside one it was unreachable
+          by region navigation. */}
+      <form role="search" aria-label="Jump to a screen" onSubmit={onSubmit} className="flex items-center gap-2 rounded-[var(--radius-sm)] px-3 py-2" style={{ background: "var(--surface-1)", boxShadow: "inset 0 0 0 var(--border-w) var(--hairline)" }}>
         <span className="font-display text-sm" style={{ color: "var(--text-muted)" }} aria-hidden>
           &gt;
         </span>

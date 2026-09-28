@@ -9,7 +9,9 @@
 .vault-nav-link svg { width: 17px; height: 17px; flex-shrink: 0; }
 .vault-nav-link:hover { background: var(--surface-2); }
 .vault-nav-link[aria-current="page"] { background: var(--accent-soft); color: var(--accent-text); box-shadow: inset 2px 0 var(--accent); }
-.vault-nav-index { margin-left: auto; font: 9px var(--font-ibm-plex-mono), monospace; color: var(--text-muted); }
+/* Secondary, not muted: on the current item's accent-soft highlight the muted
+   ink measured 4.32:1 in Vault Noir light. */
+.vault-nav-index { margin-left: auto; font: 9px var(--font-ibm-plex-mono), monospace; color: var(--text-secondary); }
 [data-design="noir"] .finance-shell { background-image: radial-gradient(ellipse at 85% 0%, var(--accent-soft), transparent 45%); }
 [data-design="noir"] .finance-shell main { max-width: 1280px; }
 [data-design="noir"] .finance-shell main > header { padding-bottom: 24px; border-bottom: 1px solid var(--hairline-strong); }
