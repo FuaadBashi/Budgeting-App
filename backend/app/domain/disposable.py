@@ -21,6 +21,7 @@ from app.domain.clock import today as clock_today
 from app.domain.income import next_date as income_next_date
 from app.domain.ledger_scope import posted_transaction_ids
 from app.domain.obligation_scope import still_committed_as_of
+from app.domain.profile import protected_buffer
 from app.models.enums import ASSET_KINDS, LIQUID_KINDS, AccountKind
 from app.models.ledger import Account, Posting, Transaction
 from app.models.planning import (
@@ -233,8 +234,7 @@ def compute_safe_to_spend(session: Session, today: date | None = None) -> SafeTo
     window_end = near_term_window_end(session, today)
     committed = near_term_committed(session, today, window_end)
 
-    profile = session.scalars(select(UserProfile)).first()
-    buffer_ = profile.protected_cash_buffer if profile else ZERO
+    buffer_ = protected_buffer(session)
 
     split = planned_contributions_split(session, today)
     planned = split.total

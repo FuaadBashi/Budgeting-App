@@ -29,13 +29,13 @@ from app.domain.income import occurrences as income_occurrences
 from app.domain.ledger_scope import posted_transaction_ids
 from app.domain.money import ZERO
 from app.domain.obligation_scope import unmatched
+from app.domain.profile import protected_buffer
 from app.models.enums import LIQUID_KINDS
 from app.models.ledger import Account, Posting, Transaction
 from app.models.planning import (
     ExpectedIncome,
     FutureObligation,
     ObligationInstance,
-    UserProfile,
 )
 
 DEFAULT_HORIZON_DAYS = 90
@@ -182,8 +182,7 @@ def build(
 
     opening = curve_balance(session, today)
 
-    profile = session.scalars(select(UserProfile)).first()
-    buffer_ = profile.protected_cash_buffer if profile else ZERO
+    buffer_ = protected_buffer(session)
 
     by_day: dict[date, list[CalendarEvent]] = {}
 
@@ -290,8 +289,7 @@ def month(session: Session, first: date, today: date, horizon: date | None = Non
     last = (first.replace(day=28) + timedelta(days=4)).replace(day=1) - timedelta(days=1)
     horizon = horizon or today + timedelta(days=DEFAULT_HORIZON_DAYS)
 
-    profile = session.scalars(select(UserProfile)).first()
-    buffer_ = profile.protected_cash_buffer if profile else ZERO
+    buffer_ = protected_buffer(session)
 
     # Actuals, from the ledger, for every day up to and including today.
     actual_end = min(last, today)

@@ -28,9 +28,10 @@ from sqlalchemy.orm import Session
 
 from app.domain.disposable import account_balances
 from app.domain.money import ZERO
+from app.domain.profile import protected_buffer
 from app.models.enums import LIQUID_KINDS, AccountKind
 from app.models.ledger import Account
-from app.models.planning import SavingsGoal, Scenario, UserProfile
+from app.models.planning import SavingsGoal, Scenario
 
 PENCE = Decimal("0.01")
 
@@ -144,12 +145,11 @@ def baseline(session: Session, as_of: date) -> dict:
         elif account.kind == AccountKind.INVESTMENT:
             investments += amount
 
-    profile = session.scalars(select(UserProfile)).first()
     return {
         "cash": cash,
         "savings": savings,
         "investments": investments,
-        "buffer": profile.protected_cash_buffer if profile else ZERO,
+        "buffer": protected_buffer(session),
     }
 
 

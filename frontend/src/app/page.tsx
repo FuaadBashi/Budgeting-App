@@ -1,4 +1,5 @@
 import type { CSSProperties } from "react";
+import Link from "next/link";
 import { AnimatedAmount } from "@/components/AnimatedAmount";
 import { AppShell } from "@/components/AppShell";
 import { requireSession } from "@/lib/guard";
@@ -330,7 +331,11 @@ export default async function Dashboard() {
                   // does not exist.
                   <>
                     Projected cash stays above zero for the next 90 days. No
-                    protected cash buffer is set.
+                    protected cash buffer is set.{" "}
+                    <Link href="/accounts#buffer" className="underline">
+                      Set one
+                    </Link>
+                    .
                   </>
                 ) : (
                   <>

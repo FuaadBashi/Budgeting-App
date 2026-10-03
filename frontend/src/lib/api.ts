@@ -509,6 +509,15 @@ export interface CategoryInput {
 }
 export const createCategory = (input: CategoryInput) => post<Category>("/categories", input);
 
+/** Rulebook section 4's floor of cash that safe to spend never counts as spendable. */
+export interface ProtectedBuffer {
+  amount_minor: Minor;
+}
+
+export const getProtectedBuffer = () => get<ProtectedBuffer>("/protected-buffer");
+export const setProtectedBuffer = (amountMinor: Minor) =>
+  send<ProtectedBuffer>("/protected-buffer", { amount_minor: amountMinor }, "PUT");
+
 export type RuleField = "description" | "merchant" | "either";
 export type RuleMatch = "contains" | "starts_with" | "equals";
 export type RuleDirection = "any" | "out" | "in";
