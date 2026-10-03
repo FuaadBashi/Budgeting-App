@@ -34,9 +34,10 @@ from app.domain.disposable import (
 )
 from app.domain.income import total_between as income_total_between
 from app.domain.money import ZERO
+from app.domain.profile import protected_buffer
 from app.models.enums import LIQUID_KINDS, GoalPriority
 from app.models.ledger import Account
-from app.models.planning import ExpectedIncome, SavingsGoal, UserProfile
+from app.models.planning import ExpectedIncome, SavingsGoal
 
 #: Ascending order of what gives way first.
 SACRIFICE_ORDER = [
@@ -125,8 +126,7 @@ def assess(session: Session, today: date) -> Recovery:
     # inside one and outside the other.
     committed = near_term_committed(session, today, horizon)
 
-    profile = session.scalars(select(UserProfile)).first()
-    buffer_ = profile.protected_cash_buffer if profile else ZERO
+    buffer_ = protected_buffer(session)
 
     split = planned_contributions_split(session, today)
     income_in = expected_income_before(session, today, horizon)

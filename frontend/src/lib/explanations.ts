@@ -25,6 +25,7 @@ export const SCREEN_GUIDES: Record<string, Guide> = {
     ["Categories and defaults", "Essential/discretionary classifications inform reports. A default category is applied to new expense postings; changing it does not rewrite old spending."],
     ["Categorisation rules", "Ordered rules match descriptions or merchants. Preview before applying to history: changing categories can change past budget reports."],
     ["Bank connections", "Connect, map a bank account, then sync. Imported rows are candidates to review, not money added automatically. Revoking disconnects the feed."],
+    ["Protected cash buffer", "Cash that safe to spend always holds back, such as a month of essential bills. Raising it lowers safe to spend by the same amount; the balance curve warns when a bill would dip below it."],
     ["Setup checklist", "Shows the account kinds and categories needed to enter transactions. A completed checklist does not mean all your financial information is complete."],
   ] },
   budgets: { title: "Your budgets and month plan", items: [

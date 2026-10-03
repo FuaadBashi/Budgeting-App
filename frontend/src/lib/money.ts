@@ -47,3 +47,13 @@ export function parseMajorToMinor(value: string): Minor | null {
   const minor = pounds * 100 + pence;
   return Number.isSafeInteger(minor) ? minor : null;
 }
+
+/**
+ * Pre-fill for an amount input: "1234.50", no currency sign or separators, so
+ * parseMajorToMinor reads it back unchanged. Integer arithmetic only -- the
+ * same no-float rule as parsing, for values the user may save without editing.
+ */
+export function formatMinorForInput(minor: Minor): string {
+  const pence = minor % 100;
+  return `${(minor - pence) / 100}.${String(pence).padStart(2, "0")}`;
+}

@@ -1,6 +1,7 @@
 import { AccountsSection, CategoriesSection } from "@/components/AccountManager";
 import { AppShell } from "@/components/AppShell";
 import { BankManager } from "@/components/BankManager";
+import { BufferSetting } from "@/components/BufferSetting";
 import { RuleManager } from "@/components/RuleManager";
 import { SetupChecklist } from "@/components/SetupChecklist";
 import { PageTabs } from "@/components/ui";
@@ -10,6 +11,7 @@ import {
   getBankConnections,
   getBankStatus,
   getCategories,
+  getProtectedBuffer,
   getRules,
   type Account,
   type BankConnection,
@@ -58,9 +60,13 @@ export default async function AccountsPage({ searchParams }: { searchParams: Pro
   let rules: Rule[] = [];
   let bankStatus: BankStatus | null = null;
   let connections: BankConnection[] = [];
+  let bufferMinor = 0;
   let error: string | null = null;
   try {
     [accounts, categories, rules] = await Promise.all([getAccounts(), getCategories(), getRules()]);
+    if (tab === "accounts") {
+      bufferMinor = (await getProtectedBuffer()).amount_minor;
+    }
     if (tab === "bank") {
       [bankStatus, connections] = await Promise.all([getBankStatus(), getBankConnections()]);
     }
@@ -108,6 +114,7 @@ export default async function AccountsPage({ searchParams }: { searchParams: Pro
               <>
                 {steps.some((s) => !s.done) && <SetupChecklist steps={steps} />}
                 <AccountsSection accounts={accounts} />
+                <BufferSetting amountMinor={bufferMinor} />
               </>
             )}
             {tab === "categories" && <CategoriesSection categories={categories} />}
