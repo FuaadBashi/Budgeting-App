@@ -41,7 +41,7 @@ presentation change; financial calculations and API contracts are unchanged.
 | 10 | Polish, backups, hosting | ◐ backups and exposure hardening done; the deploy itself is yours |
 | 11 | Assisted categorisation (LLM) | ✅ |
 
-**Phases 0–9 and 11 complete; Phase 10's backup half is done.** 940 tests. Deployment is the
+**Phases 0–9 and 11 complete; Phase 10's backup half is done.** 959 tests. Deployment is the
 only substantial thing left from the original plan, and `docs/RUNNING.md` already describes the
 setup worth having (Tailscale, real certificates, nothing exposed to the internet) — but see
 "Recommended next task" below, which is not that.
@@ -113,6 +113,7 @@ live; routes only translate to and from integer minor units.
 | `auth.py` | Password hashing, session cookies, the route guard |
 | `domain/disposable.py` | Safe to spend, net worth, account balances |
 | `domain/profile.py` | The settings row; `protected_buffer`, the one read of the buffer every engine subtracts |
+| `domain/account_lifecycle.py` | What archiving an account requires, and what an archived account refuses (X23) |
 | `domain/classification.py` | Derived transaction type |
 | `domain/simulation.py` | Scenario projection; reads the ledger, writes nothing (P1) |
 | `domain/importing.py` | Statement parsing, duplicate detection, acceptance (M1–M4) |
@@ -166,7 +167,7 @@ where something lives.
 |---|---|
 | `AppShell.tsx` | Nav chrome for all four designs (rail / masthead / dock / rail+command-bar); mobile top bar and bottom tabs (four plus a More sheet), identical across designs |
 | `PreferencesPanel.tsx` | The gear-icon control: pick a design, pick System/Light/Dark. `placement="rail"` puts it inside the icon rail |
-| `AccountManager.tsx` | Account and category lists and creation forms; the one line where "amount owed" becomes a negative balance |
+| `AccountManager.tsx` | Account and category lists and creation forms, with per-account rename, archive and restore; the one line where "amount owed" becomes a negative balance |
 | `BufferSetting.tsx` | The protected cash buffer card on Accounts (`#buffer`); the dashboard's "none set" note links to it |
 | `SetupChecklist.tsx` | What the ledger still needs before Add can record anything; on the dashboard and Accounts |
 | `StatTile.tsx` | Label + value + optional support/footnote; `lead` marks the one hero figure per screen |
@@ -251,6 +252,7 @@ calendar, simulation. `BUDGET_ENGINE_SPEC.md` §4 lists ten contradiction points
 | X20 | A receipt reaches the ledger only through the candidate inbox (A1') | ✅ `test_receipts.py` — staging leaves balances and transaction count untouched |
 | X21 | The merchant baseline reads the same postings `Spent` does, netted the same way | ✅ Shared `_legs_in_scope` selector for scope; shared `reimbursement._offsets` walk for netting. `test_merchant_anomaly.py::test_the_baseline_reads_the_same_postings_budget_spent_does` and `::test_a_fully_reimbursed_trip_does_not_trip_the_merchant_warning` |
 | X22 | An account default is stamped on the write, never derived on the read | ✅ `test_account_defaults.py` — changing a default leaves written postings alone, and a restore reproduces the file |
+| X23 | An archived account holds nothing, so engines that skip inactive accounts agree with net worth, which reads them all | ✅ `account_lifecycle`: archiving needs a zero balance, and posting to, accepting into or voiding against an archived account is refused. `test_account_lifecycle.py::test_archiving_an_empty_account_leaves_every_headline_figure_unchanged` and `::test_voiding_a_transaction_on_an_archived_account_is_refused` |
 | X23 | A category the second opinion rejects is never cached as an answer, and is surfaced on the candidate, not just silently blanked | ✅ `test_enrichment.py::test_a_downgraded_pick_is_not_cached_at_all`, `::test_a_downgraded_merchant_is_asked_about_again_next_time`; `test_receipts.py::test_a_second_check_that_disagrees_is_surfaced_not_applied` |
 | X24 | Safe-to-spend, the balance curve and the projection release an obligation on the same event | ✅ `test_cross_engine_guards.py::test_X24_every_forecast_engine_drops_an_obligation_on_the_same_event`, plus `test_obligation_api.py::test_projected_spend_is_the_same_whether_or_not_a_match_is_confirmed` |
 | X25 | An automatic obligation match is unambiguous and reversible | ✅ `test_obligation_api.py::test_an_ambiguous_same_amount_pair_is_not_auto_matched`, `::test_unmatching_restores_the_commitment_and_survives_sync` |
@@ -385,9 +387,12 @@ each with named tests.
 5. ~~Transaction editing~~ — done. `PATCH /api/transactions/{id}` corrects description,
    merchant and category in place; amount and booking date are refused with a 422 naming the
    void endpoint, because those are the corrections that have to say the money was wrong.
-6. Accounts can be created on `/accounts`, but not renamed or archived — that still needs the
-   API. Categories can be created; renaming one is a bigger question, because the name is what
-   every past budget breakdown was read under.
+6. ~~Accounts can be created on `/accounts`, but not renamed or archived.~~ Done.
+   `PATCH /api/accounts/{id}` takes `name` and `active`. Archiving is refused while the account
+   holds money or an active goal, commitment, expected income or bank feed still uses it; after
+   that, nothing may post to, accept into or void against it (X23). Pickers for new money skip
+   archived accounts, and history keeps their names. Categories can be created; renaming one is
+   a bigger question, because the name is what every past budget breakdown was read under.
 7. ~~**The protected cash buffer has no API or UI.**~~ Done. `GET`/`PUT /api/protected-buffer`
    sets it from a card on Accounts, and the dashboard's "none set" note links there. Every engine
    reads it through `domain/profile.protected_buffer`, so the card shows what each one subtracts.

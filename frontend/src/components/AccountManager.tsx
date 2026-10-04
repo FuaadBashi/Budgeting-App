@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import {
   createAccount,
   createCategory,
+  openAccounts,
+  updateAccount,
   type Account,
   type Category,
 } from "@/lib/api";
@@ -96,14 +98,15 @@ export function AccountsSection({ accounts }: { accounts: Account[] }) {
 
   const grouped = GROUPS.map((g) => ({
     ...g,
-    rows: accounts.filter((a) => g.kinds.includes(a.kind)),
+    rows: openAccounts(accounts).filter((a) => g.kinds.includes(a.kind)),
   })).filter((g) => g.rows.length > 0);
+  const archived = accounts.filter((a) => !a.active);
 
   return (
     <section>
       <SectionHeader
         title="Accounts"
-        description="Where money is held, where it comes from and where it goes."
+        description="Where money is held, where it comes from and where it goes. Archive an account you have closed once it is empty."
         action={
           <SecondaryButton onClick={() => setOpen((v) => !v)} aria-expanded={open}>
             {open ? "Cancel" : "New account"}
@@ -178,7 +181,7 @@ export function AccountsSection({ accounts }: { accounts: Account[] }) {
 
       {grouped.length === 0 ? (
         <div className="card p-5 text-sm" style={{ color: "var(--text-muted)" }}>
-          No accounts yet.
+          {archived.length > 0 ? "Every account is archived." : "No accounts yet."}
         </div>
       ) : (
         <div className="card divide-y" style={{ borderColor: "var(--gridline)" }}>
@@ -187,28 +190,145 @@ export function AccountsSection({ accounts }: { accounts: Account[] }) {
               <div className="section-label mb-2">{group.label}</div>
               <ul className="space-y-1.5">
                 {group.rows.map((a) => (
-                  <li key={a.id} className="flex justify-between gap-3 text-sm">
-                    <span style={{ color: "var(--text-secondary)", overflowWrap: "anywhere" }}>
-                      {a.name}
-                    </span>
-                    {group.balances && (
-                      <span
-                        className="tnum shrink-0"
-                        style={{
-                          color: a.balance_minor < 0 ? "var(--status-critical)" : "var(--text-primary)",
-                        }}
-                      >
-                        {formatMinor(a.balance_minor)}
-                      </span>
-                    )}
-                  </li>
+                  <AccountRow key={a.id} account={a} showBalance={group.balances} />
                 ))}
               </ul>
             </div>
           ))}
         </div>
       )}
+
+      {archived.length > 0 && (
+        <details className="card mt-4 p-4">
+          <summary className="section-label cursor-pointer">Archived ({archived.length})</summary>
+          <p className="mt-2 text-xs" style={{ color: "var(--text-muted)" }}>
+            Kept so past transactions keep their names. Archived accounts are left out of new
+            entries, imports and forecasts until you restore them.
+          </p>
+          <ul className="mt-3 space-y-1.5">
+            {archived.map((a) => (
+              <AccountRow key={a.id} account={a} showBalance={false} />
+            ))}
+          </ul>
+        </details>
+      )}
     </section>
+  );
+}
+
+/**
+ * One account with its rename and archive controls. Archiving is refused by
+ * the API while the account holds money or anything active still uses it, and
+ * the reason it gives is shown under the row as it stands.
+ */
+function AccountRow({ account, showBalance }: { account: Account; showBalance: boolean }) {
+  const router = useRouter();
+  const [renaming, setRenaming] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function save(body: { name?: string; active?: boolean }) {
+    setBusy(true);
+    setError(null);
+    try {
+      await updateAccount(account.id, body);
+      setRenaming(false);
+      router.refresh();
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "Could not save.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  function onRename(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const name = String(new FormData(event.currentTarget).get("name") || "").trim();
+    if (!name) {
+      setError("An account needs a name.");
+      return;
+    }
+    if (name === account.name) {
+      setRenaming(false);
+      return;
+    }
+    void save({ name });
+  }
+
+  return (
+    <li className="space-y-1 text-sm">
+      {renaming ? (
+        <form onSubmit={onRename} className="flex flex-wrap items-center gap-2">
+          <input
+            name="name"
+            defaultValue={account.name}
+            required
+            maxLength={120}
+            autoFocus
+            aria-label={`New name for ${account.name}`}
+            className="form-control min-w-0 flex-1"
+          />
+          <PrimaryButton busy={busy}>Save</PrimaryButton>
+          <SecondaryButton
+            onClick={() => {
+              setRenaming(false);
+              setError(null);
+            }}
+          >
+            Cancel
+          </SecondaryButton>
+        </form>
+      ) : (
+        <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
+          <span
+            className="min-w-0 flex-1"
+            style={{
+              color: account.active ? "var(--text-secondary)" : "var(--text-muted)",
+              overflowWrap: "anywhere",
+            }}
+          >
+            {account.name}
+          </span>
+          <div className="flex shrink-0 items-center gap-2">
+            {showBalance && (
+              <span
+                className="tnum"
+                style={{
+                  color: account.balance_minor < 0 ? "var(--status-critical)" : "var(--text-primary)",
+                }}
+              >
+                {formatMinor(account.balance_minor)}
+              </span>
+            )}
+            <SecondaryButton
+              onClick={() => setRenaming(true)}
+              disabled={busy}
+              aria-label={`Rename ${account.name}`}
+            >
+              Rename
+            </SecondaryButton>
+            {account.active ? (
+              <SecondaryButton
+                onClick={() => save({ active: false })}
+                disabled={busy}
+                aria-label={`Archive ${account.name}`}
+              >
+                Archive
+              </SecondaryButton>
+            ) : (
+              <SecondaryButton
+                onClick={() => save({ active: true })}
+                disabled={busy}
+                aria-label={`Restore ${account.name}`}
+              >
+                Restore
+              </SecondaryButton>
+            )}
+          </div>
+        </div>
+      )}
+      {error && <ErrorLine>{error}</ErrorLine>}
+    </li>
   );
 }
 

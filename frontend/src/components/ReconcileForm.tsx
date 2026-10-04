@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, type FormEvent, type ReactNode } from "react";
-import { reconcileAccount, type Account, type Reconciliation } from "@/lib/api";
+import { openAccounts, reconcileAccount, type Account, type Reconciliation } from "@/lib/api";
 import { formatMinor, parseMajorToMinor } from "@/lib/money";
 
 /** Accounts a balance can meaningfully be stated for -- same set the
@@ -25,7 +25,7 @@ export function ReconcileForm({ accounts }: { accounts: Account[] }) {
   const [error, setError] = useState<string | null>(null);
   const [accountId, setAccountId] = useState("");
 
-  const reconcilable = accounts.filter((a) => RECONCILABLE.has(a.kind));
+  const reconcilable = openAccounts(accounts).filter((a) => RECONCILABLE.has(a.kind));
   // A credit card statement says "£500.00 owed", never "-£500.00". The ledger
   // stores that as -50000 because liabilities are credit-normal, so the field
   // asks for what the statement actually prints and the sign is flipped once,

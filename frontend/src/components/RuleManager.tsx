@@ -3,6 +3,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import {
+  openAccounts,
   applyRule,
   createRule,
   orderRules,
@@ -216,7 +217,7 @@ function RuleForm({
   const [advanced, setAdvanced] = useState(
     Boolean(rule && (rule.direction !== "any" || rule.amount_min_minor !== null || rule.amount_max_minor !== null || rule.account_id)),
   );
-  const heldAccounts = accounts.filter((a) => ["current", "cash", "savings", "liability"].includes(a.kind));
+  const heldAccounts = openAccounts(accounts).filter((a) => ["current", "cash", "savings", "liability"].includes(a.kind));
 
   function amount(value: FormDataEntryValue | null): number | null | "bad" {
     const text = String(value ?? "").trim().replace(/^£\s*/, "");

@@ -18,6 +18,7 @@ from sqlalchemy.orm import Session
 from app.api.schemas import from_minor, to_minor
 from app.db import get_session
 from app.domain import calendar as cal
+from app.domain.account_lifecycle import ArchivedAccountError, ensure_open
 from app.domain.clock import today as clock_today
 from app.domain.obligation_scope import awaiting_review, unmatched
 from app.domain.obligations import generate_instances, match_instances
@@ -136,6 +137,11 @@ def create_obligation(
     if payload.end_date and payload.end_date < payload.first_due_date:
         raise HTTPException(422, "end_date must not precede first_due_date")
 
+    if payload.account_id is not None:
+        try:
+            ensure_open(session, [payload.account_id], "paying commitments from it")
+        except ArchivedAccountError as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
     ob = FutureObligation(
         name=payload.name,
         amount=from_minor(payload.amount_minor),

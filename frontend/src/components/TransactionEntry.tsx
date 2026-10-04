@@ -7,6 +7,7 @@ import { useEffect, useMemo, useState, useSyncExternalStore, type FormEvent, typ
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import {
+  openAccounts,
   createTransaction,
   getAccounts,
   getCategories,
@@ -39,7 +40,8 @@ function localDate(): string {
   return `${year}-${month}-${day}`;
 }
 
-function accountChoices(accounts: Account[], kind: EntryKind) {
+function accountChoices(all: Account[], kind: EntryKind) {
+  const accounts = openAccounts(all);
   const source = accounts.filter((account) => {
     if (kind === "expense") {
       return ["current", "cash", "liability"].includes(account.kind);

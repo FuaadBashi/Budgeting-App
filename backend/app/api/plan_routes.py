@@ -18,6 +18,7 @@ from sqlalchemy.orm import Session
 from app.api.schemas import from_minor, to_minor
 from app.db import get_session
 from app.domain import plan as plan_domain
+from app.domain.account_lifecycle import ArchivedAccountError, ensure_open
 from app.domain.clock import today as clock_today
 from app.domain.income import occurrences
 from app.domain.recurrence import Frequency, build_rule, frequency_of
@@ -108,6 +109,10 @@ def _check_account(session: Session, account_id: uuid.UUID | None) -> None:
             detail=f"{account.name} is a {account.kind.value} account; income lands in a "
             "current, cash, savings or investment account",
         )
+    try:
+        ensure_open(session, [account.id], "expecting income into it")
+    except ArchivedAccountError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
 
 
 def _check_name_free(session: Session, name: str, exclude: uuid.UUID | None = None) -> None:

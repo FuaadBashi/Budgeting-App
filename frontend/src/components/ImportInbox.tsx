@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
+  openAccounts,
   acceptCandidate,
   rejectCandidate,
   reopenCandidate,
@@ -47,9 +48,10 @@ export function ImportInbox({
   const [receipt, setReceipt] = useState<string | null>(null);
   const [triage, setTriage] = useState(false);
 
-  const statementAccounts = accounts.filter((a) => IMPORTABLE.has(a.kind));
-  const expense = accounts.filter((a) => a.kind === "expense");
-  const income = accounts.filter((a) => a.kind === "income_source");
+  const open = openAccounts(accounts);
+  const statementAccounts = open.filter((a) => IMPORTABLE.has(a.kind));
+  const expense = open.filter((a) => a.kind === "expense");
+  const income = open.filter((a) => a.kind === "income_source");
 
   // Read straight from the prop. The server component is the source of truth
   // and every action ends in router.refresh(); a local copy would go stale the
