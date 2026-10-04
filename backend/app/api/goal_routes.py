@@ -25,6 +25,7 @@ from sqlalchemy.orm import Session
 
 from app.api.schemas import from_minor, to_minor
 from app.db import get_session
+from app.domain.account_lifecycle import ArchivedAccountError, ensure_open
 from app.domain.clock import today as clock_today
 from app.domain.simulation import add_months
 from app.models import GoalContribution, GoalPriority, SavingsGoal
@@ -136,6 +137,11 @@ def list_goals(
 
 @router.post("/goals", response_model=GoalOut, status_code=201)
 def create_goal(payload: GoalIn, session: Session = Depends(get_session)) -> GoalOut:
+    if payload.account_id is not None:
+        try:
+            ensure_open(session, [payload.account_id], "saving into it")
+        except ArchivedAccountError as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
     goal = SavingsGoal(
         name=payload.name,
         target_amount=from_minor(payload.target_amount_minor),
@@ -172,6 +178,11 @@ def update_goal(
     if payload.planned_contribution_minor is not None:
         goal.planned_contribution = from_minor(payload.planned_contribution_minor)
     if payload.account_id is not None:
+        if payload.account_id != goal.account_id:
+            try:
+                ensure_open(session, [payload.account_id], "saving into it")
+            except ArchivedAccountError as exc:
+                raise HTTPException(status_code=422, detail=str(exc)) from exc
         goal.account_id = payload.account_id
     # None is a meaningful value here -- it means "follow priority" -- so this
     # field cannot use the same "None means unchanged" rule as the others and is

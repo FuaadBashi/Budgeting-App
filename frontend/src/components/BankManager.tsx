@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
+  openAccounts,
   connectBank,
   disconnectBank,
   getBankInstitutions,
@@ -252,7 +253,7 @@ function LinkRow({ link, accounts, live }: { link: BankLink; accounts: Account[]
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<BankSyncResult | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const homes = accounts.filter((a) => IMPORTABLE.includes(a.kind));
+  const homes = openAccounts(accounts).filter((a) => IMPORTABLE.includes(a.kind));
   const home = accounts.find((a) => a.id === link.account_id);
 
   async function map(accountId: string) {

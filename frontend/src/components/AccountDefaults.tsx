@@ -1,7 +1,7 @@
 "use client";
 
 import { InlineEditor } from "@/components/InlineEditor";
-import { updateAccount, type Account, type Category } from "@/lib/api";
+import { openAccounts, updateAccount, type Account, type Category } from "@/lib/api";
 
 const NONE = "";
 
@@ -25,7 +25,7 @@ export function AccountDefaults({
   accounts: Account[];
   categories: Category[];
 }) {
-  const expense = accounts.filter((a) => a.kind === "expense");
+  const expense = openAccounts(accounts).filter((a) => a.kind === "expense");
   if (expense.length === 0) return null;
 
   const options = [

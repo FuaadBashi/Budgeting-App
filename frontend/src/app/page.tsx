@@ -10,6 +10,7 @@ import { StatTile } from "@/components/StatTile";
 import { ExplainMetric, HelpText } from "@/components/ExplainMode";
 import { safeExplanation, dailyExplanation, savingsExplanation, netWorthExplanation } from "@/lib/metric-explanations";
 import {
+  openAccounts,
   getAccounts,
   getBudgets,
   getCalendar,
@@ -126,7 +127,7 @@ export default async function Dashboard() {
 
   const grouped = ACCOUNT_GROUPS.map((g) => ({
     ...g,
-    rows: accounts.filter((a) => g.kinds.includes(a.kind)),
+    rows: openAccounts(accounts).filter((a) => g.kinds.includes(a.kind)),
   })).filter((g) => g.rows.length > 0);
 
   return (

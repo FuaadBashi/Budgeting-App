@@ -34,6 +34,11 @@ from app.api.schemas import (
     to_minor,
 )
 from app.db import get_session
+from app.domain.account_lifecycle import (
+    ArchivedAccountError,
+    archive_blockers,
+    ensure_open,
+)
 from app.domain.categories import apply_account_defaults
 from app.domain.classification import classify
 from app.domain.clock import today as clock_today
@@ -65,6 +70,7 @@ def _account_out(account: Account, balance_minor: int) -> AccountOut:
         currency=account.currency,
         balance_minor=balance_minor,
         default_category_id=account.default_category_id,
+        active=account.active,
     )
 
 
@@ -137,20 +143,36 @@ def edit_account(
     payload: AccountEditIn,
     session: Session = Depends(get_session),
 ) -> AccountOut:
-    """Set or clear an account's default category.
+    """Rename an account, archive or restore it, or set its default category.
 
-    Changing it is forward-only: existing postings keep whatever category they
-    were stamped with, because re-deriving them would change what a closed period
-    meant. ``scripts/backfill_categories.py`` is the explicit, opt-in way to
-    apply a new default to history.
+    A default category is forward-only: existing postings keep whatever category
+    they were stamped with, because re-deriving them would change what a closed
+    period meant. ``scripts/backfill_categories.py`` is the explicit, opt-in way
+    to apply a new default to history.
+
+    Archiving is refused while the account still holds money or anything active
+    still points at it -- see ``account_lifecycle`` for why.
     """
     account = session.get(Account, account_id)
     if account is None:
         raise HTTPException(status_code=404, detail="account not found")
 
-    if "default_category_id" in payload.model_fields_set:
+    sent = payload.model_fields_set
+    if "default_category_id" in sent:
         _validate_default_category(session, account.kind, payload.default_category_id)
         account.default_category_id = payload.default_category_id
+    if "name" in sent:
+        account.name = payload.name
+    if "active" in sent and payload.active != account.active:
+        if not payload.active:
+            blockers = archive_blockers(session, account)
+            if blockers:
+                raise HTTPException(
+                    status_code=422,
+                    detail=f"{account.name} cannot be archived yet: "
+                    + "; ".join(blockers),
+                )
+        account.active = payload.active
 
     session.commit()
     balances = account_balances(session)
@@ -285,6 +307,14 @@ def create_transaction(
         merchant=payload.merchant,
         reimburses_id=payload.reimburses_id,
     )
+    try:
+        ensure_open(
+            session,
+            (leg.account_id for leg in payload.postings),
+            "recording money against it",
+        )
+    except ArchivedAccountError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
     for leg in payload.postings:
         txn.postings.append(
             Posting(
@@ -412,6 +442,12 @@ def void_transaction(
         raise HTTPException(status_code=404, detail="transaction not found")
     if txn.status == TransactionStatus.VOIDED:
         raise HTTPException(status_code=422, detail="transaction is already voided")
+    # Voiding takes the transaction out of every balance, so on an archived
+    # account it would leave money behind that no screen shows.
+    try:
+        ensure_open(session, (p.account_id for p in txn.postings), "voiding this transaction")
+    except ArchivedAccountError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
 
     txn.status = TransactionStatus.VOIDED
     # A void says the transaction never happened. Any obligation link pointing

@@ -42,6 +42,9 @@ class AccountOut(BaseModel):
     currency: str
     balance_minor: int
     default_category_id: uuid.UUID | None = None
+    #: False once archived. Archived accounts stay listed so past transactions
+    #: keep their names; pickers for new money leave them out.
+    active: bool = True
 
 
 class AccountIn(BaseModel):
@@ -71,9 +74,27 @@ class AccountEditIn(BaseModel):
     ``rollover_reset`` once un-forgave a write-off on an unrelated amount change.
     Clearing the default therefore has to be an explicit ``null``, and omitting
     the key leaves it alone.
+
+    ``name`` and ``active`` default to ``None`` only to mean "not sent": their
+    type has no ``None``, so an explicit ``null`` is refused rather than
+    clearing a field the account cannot be without. Unknown keys are refused
+    too; before ``name`` existed here, a rename was accepted and ignored.
     """
 
+    model_config = ConfigDict(extra="forbid")
+
     default_category_id: uuid.UUID | None = None
+    name: str = Field(default=None, min_length=1, max_length=120)
+    #: False archives the account, True restores it.
+    active: bool = Field(default=None)
+
+    @field_validator("name")
+    @classmethod
+    def _name_has_text(cls, value: str) -> str:
+        value = value.strip()
+        if not value:
+            raise ValueError("an account name needs at least one visible character")
+        return value
 
 
 class CategoryIn(BaseModel):

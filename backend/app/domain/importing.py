@@ -37,6 +37,7 @@ from sqlalchemy.orm import Session
 
 from app.config import settings
 from app.domain import providers
+from app.domain.account_lifecycle import ArchivedAccountError, ensure_open
 from app.domain.categories import apply_account_defaults
 from app.domain.money import ZERO
 from app.models.enums import AccountKind, CandidateStatus, TransactionStatus
@@ -586,6 +587,12 @@ def importable_account(session: Session, account_id) -> Account:
             f"{account.name} is a {account.kind.value} account. Statements are "
             "imported into an account money actually sits in."
         )
+    # Covers statement uploads and bank-feed mapping: both would put new rows
+    # into an account whose balance no screen shows.
+    try:
+        ensure_open(session, [account.id], "importing into it")
+    except ArchivedAccountError as exc:
+        raise ImportError_(str(exc)) from exc
     return account
 
 
@@ -769,6 +776,11 @@ def accept(
         raise ImportError_("That category account does not exist.")
 
     batch = session.get(ImportBatch, candidate.batch_id)
+    # The statement may have been staged before its account was archived.
+    try:
+        ensure_open(session, [batch.account_id, counter.id], "accepting this row")
+    except ArchivedAccountError as exc:
+        raise ImportError_(str(exc)) from exc
     transaction = Transaction(
         # Local noon, matching every other writer. Midnight round-trips to the
         # previous day in any negative UTC offset, which would put occurred_at

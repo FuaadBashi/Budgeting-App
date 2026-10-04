@@ -40,7 +40,16 @@ export interface Account {
   balance_minor: Minor;
   /** Stamped onto an untagged leg at write time. Expense accounts only. */
   default_category_id: string | null;
+  /** False once archived. Still listed so history keeps its names. */
+  active: boolean;
 }
+
+/**
+ * The accounts new money can use. Every picker that starts a transaction, a
+ * goal, a rule or an import goes through this; name lookups for history do
+ * not, so an archived account's past transactions still show its name.
+ */
+export const openAccounts = (accounts: Account[]) => accounts.filter((a) => a.active);
 
 export interface Reconciliation {
   account_id: string;

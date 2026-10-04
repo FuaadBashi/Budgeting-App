@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState, type FormEvent, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import {
+  openAccounts,
   createIncome,
   updateBudget,
   updateGoal,
@@ -380,7 +381,7 @@ function IncomeSection({
   const [adding, setAdding] = useState(incomes.length === 0);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const receiving = accounts.filter((a) => ["current", "cash", "savings", "investment"].includes(a.kind));
+  const receiving = openAccounts(accounts).filter((a) => ["current", "cash", "savings", "investment"].includes(a.kind));
 
   async function onAdd(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();

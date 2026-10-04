@@ -21,6 +21,7 @@ export const SCREEN_GUIDES: Record<string, Guide> = {
   ] },
   accounts: { title: "Your accounts and categories", items: [
     ["Balances and opening balances", "Opening balance is money held when tracking starts; transactions change it afterwards. Do not enter old purchases again if they are already reflected in that balance."],
+    ["Renaming and archiving", "Renaming changes only the label; past transactions show the new name. Archive an account you have closed once its balance is zero: it leaves pickers, imports and forecasts but keeps its history, and Restore brings it back."],
     ["Account kinds", "Current and Cash supply spendable cash. Savings and Investments count toward net worth; liabilities are money owed. Income source and Expense are bookkeeping counterparties, not extra money."],
     ["Categories and defaults", "Essential/discretionary classifications inform reports. A default category is applied to new expense postings; changing it does not rewrite old spending."],
     ["Categorisation rules", "Ordered rules match descriptions or merchants. Preview before applying to history: changing categories can change past budget reports."],

@@ -2,6 +2,7 @@ import { AppShell } from "@/components/AppShell";
 import { GoalManager } from "@/components/GoalManager";
 import { requireSession } from "@/lib/guard";
 import {
+  openAccounts,
   getAccounts,
   getGoals,
   getRecovery,
@@ -32,7 +33,7 @@ export default async function GoalsPage() {
     error = e instanceof Error ? e.message : "Unknown error";
   }
 
-  const savings = accounts.filter((a) => a.kind === "savings");
+  const savings = openAccounts(accounts).filter((a) => a.kind === "savings");
 
   return (
     <AppShell>

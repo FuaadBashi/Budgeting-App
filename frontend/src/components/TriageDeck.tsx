@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import type { Account, Category, ImportCandidate } from "@/lib/api";
+import { openAccounts, type Account, type Category, type ImportCandidate } from "@/lib/api";
 import { formatMinor } from "@/lib/money";
 import { ruleLink } from "@/lib/ruleLink";
 
@@ -42,8 +42,8 @@ export function TriageDeck({
   const row = remaining[0];
   const done = row === undefined;
 
-  const expense = accounts.filter((a) => a.kind === "expense");
-  const income = accounts.filter((a) => a.kind === "income_source");
+  const expense = openAccounts(accounts).filter((a) => a.kind === "expense");
+  const income = openAccounts(accounts).filter((a) => a.kind === "income_source");
   const counters = row && row.amount_minor < 0 ? expense : income;
 
   const [choices, setChoices] = useState<
