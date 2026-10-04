@@ -38,7 +38,7 @@ export function CategoryBars({
 
   return (
     <div>
-      <ul className="space-y-2.5">
+      <ul className="stagger-rows space-y-2.5">
         {shown.map((c) => (
           <li key={c.category_id ?? c.name}>
             <CategoryRow category={c} peak={peak} total={total} start={start} end={end} />
@@ -82,7 +82,7 @@ function CategoryRow({
         style={{ background: "color-mix(in oklab, var(--accent) 14%, var(--surface-1))" }}
       >
         <div
-          className="h-full rounded-full"
+          className="bar-grow h-full rounded-full"
           style={{ width: `${(c.amount_minor / peak) * 100}%`, background: "var(--accent)" }}
         />
       </div>

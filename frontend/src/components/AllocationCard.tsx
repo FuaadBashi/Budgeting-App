@@ -27,7 +27,7 @@ export function AllocationCard({ report }: { report: AllocationReport }) {
   }
 
   return (
-    <div className="space-y-5">
+    <div className="stagger-rows space-y-5">
       {[report.needs, report.wants, report.savings].map((b) => (
         <BucketRow key={b.key} bucket={b} />
       ))}
@@ -77,7 +77,7 @@ function BucketRow({ bucket }: { bucket: AllocationBucket }) {
           targetPct !== null ? `, target ${Math.round(targetPct)}%` : ""
         }`}
       >
-        <div className="h-full rounded-full" style={{ width: `${fillPct}%`, background: color }} />
+        <div className="bar-grow h-full rounded-full" style={{ width: `${fillPct}%`, background: color }} />
         {/* Target marker -- same "actual against a mark, not a bar alone"
             language as BudgetMeter's expected-spend marker. */}
         {targetPct !== null && (

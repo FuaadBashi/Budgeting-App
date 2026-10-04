@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type CSSProperties } from "react";
 import { getInsightNarrations, type Derivation, type Insight, type Severity, type Term } from "@/lib/api";
 import { formatMinor } from "@/lib/money";
 
@@ -86,7 +86,7 @@ export function InsightPanel({
             charges were spotted.
           </div>
         ) : (
-          <ul className="space-y-3">
+          <ul className="stagger-rows space-y-3">
             {insights.map((insight, index) => (
               <InsightCard
                 key={`${insight.kind}-${index}`}
@@ -104,7 +104,8 @@ export function InsightPanel({
           Nothing here is stored. Each figure is recomputed from the ledger every time
           it is read, which is why it can be shown as the sum it actually is.
         </p>
-        <div className="space-y-4">
+        {/* Starts two slots in, so the sums arrive just behind the findings. */}
+        <div className="stagger-rows space-y-4" style={{ "--i": 2 } as CSSProperties}>
           {derivations.map((d) => (
             <DerivationCard key={d.figure} derivation={d} />
           ))}

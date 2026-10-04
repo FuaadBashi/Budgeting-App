@@ -132,7 +132,7 @@ export function MatchReview({
           confirm it was that payment.
         </div>
       ) : (
-        <ul className="card divide-y" style={{ borderColor: "var(--gridline)" }}>
+        <ul className="card stagger-rows divide-y" style={{ borderColor: "var(--gridline)" }}>
           {pending.map((instance) => {
             const txn = transactions[instance.fulfilled_by_transaction_id!];
             return (

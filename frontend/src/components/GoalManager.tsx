@@ -2,7 +2,7 @@
 
 import { FieldHelp, HelpText } from "@/components/ExplainMode";
 
-import { useState, type FormEvent } from "react";
+import { useState, type CSSProperties, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { createGoal, updateGoal, type Account, type Goal } from "@/lib/api";
 import { InlineEditor } from "@/components/InlineEditor";
@@ -148,7 +148,7 @@ export function GoalManager({
         </div>
       ) : (
         <>
-          <ul className="grid gap-4 md:grid-cols-2">
+          <ul className="stagger-rows grid gap-4 md:grid-cols-2">
             {goals.map((goal) => (
               <GoalCard key={goal.id} goal={goal} />
             ))}
@@ -167,7 +167,8 @@ function GoalCard({ goal }: { goal: Goal }) {
   const pct = goal.progress === null ? 0 : Math.min(1, goal.progress);
   return (
     <li className="card goal-vault p-5">
-      <div className="goal-dial" style={{ background: `conic-gradient(var(--accent) ${pct * 360}deg, var(--surface-2) 0deg)` }} aria-label={`${Math.round(pct * 100)}% of target`} role="img"><span>{Math.round(pct * 100)}<small>%</small></span></div>
+      {/* The angle goes through --dial so noir can sweep it in from zero. */}
+      <div className="goal-dial" style={{ "--dial": `${pct * 360}deg`, background: "conic-gradient(var(--accent) var(--dial), var(--surface-2) 0deg)" } as CSSProperties} aria-label={`${Math.round(pct * 100)}% of target`} role="img"><span>{Math.round(pct * 100)}<small>%</small></span></div>
       <div className="flex items-baseline justify-between gap-3">
         <h3 className="font-medium" style={{ color: "var(--text-primary)" }}>
           {goal.name}
@@ -199,7 +200,7 @@ function GoalCard({ goal }: { goal: Goal }) {
         aria-label={`${Math.round(pct * 100)}% of target`}
       >
         <div
-          className="h-full rounded-full"
+          className="bar-grow h-full rounded-full"
           style={{ width: `${pct * 100}%`, background: "var(--accent)" }}
         />
       </div>

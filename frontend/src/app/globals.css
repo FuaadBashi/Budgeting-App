@@ -641,12 +641,88 @@
     }
   }
 
-  /* Cards and list rows cascade in on load. --i is set inline per item
-     (index, clamped by the caller) -- one keyframe, N delays. */
+  @keyframes noir-row-in {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  /* Bars fill left to right. A clip rather than a width animation, so the
+     inline width stays the only width and the rounded end is never squashed
+     the way scaleX would squash it. */
+  @keyframes noir-bar-grow {
+    from {
+      clip-path: inset(0 100% 0 0);
+    }
+    to {
+      clip-path: inset(0);
+    }
+  }
+
+  @keyframes noir-bar-rise {
+    from {
+      transform: scaleY(0);
+    }
+    to {
+      transform: none;
+    }
+  }
+
+  /* No `to`: the dial sweeps to whatever --dial the card set inline. */
+  @keyframes noir-dial {
+    from {
+      --dial: 0deg;
+    }
+  }
+
+  /* Page blocks cascade in on load. --i is set inline per block (index,
+     clamped by the caller) -- one keyframe, N delays.
+
+     Every entrance here fills `backwards`, never `forwards`. Backwards holds
+     the first keyframe through the delay, so nothing flashes, and hands the
+     element back to its own styles the moment the animation ends. Forwards
+     kept `transform: none` and `filter: blur(0)` applied for good, and an
+     animation outranks every ordinary rule, so a staggered card never lifted
+     or cast its shadow on hover. */
   [data-design="noir"] .stagger-in {
-    opacity: 0;
-    animation: noir-rise var(--dur-slow) var(--ease-noir) forwards;
+    animation: noir-rise var(--dur-slow) var(--ease-noir) backwards;
     animation-delay: calc(var(--i, 0) * 70ms);
+  }
+
+  /* The rows of a list follow one another in. The rows need no index of
+     their own: nth-child numbers them (--n, below), and the list starts at
+     the --i of the block it sits in, so rows arrive with their section
+     rather than before it. No blur, unlike a block: a ledger page holds a
+     hundred rows, and blurring that many at once costs more than it reads. */
+  [data-design="noir"] .stagger-rows > * {
+    animation: noir-row-in var(--dur-med) var(--ease-noir) backwards;
+    animation-delay: calc(var(--i, 0) * 70ms + var(--n, 0) * 45ms);
+  }
+
+  /* A bar grows just after its row arrives; a row with no list around it
+     starts with its block. */
+  [data-design="noir"] .bar-grow {
+    animation: noir-bar-grow var(--dur-slow) var(--ease-noir) backwards;
+    animation-delay: calc(var(--i, 0) * 70ms + var(--n, 0) * 45ms + 160ms);
+  }
+
+  /* Month columns rise from the baseline. fill-box makes "bottom" the bar's
+     own foot, not the foot of the whole SVG. */
+  [data-design="noir"] .bar-rise {
+    transform-box: fill-box;
+    transform-origin: 50% 100%;
+    animation: noir-bar-rise var(--dur-slow) var(--ease-noir) backwards;
+    animation-delay: calc(var(--i, 0) * 70ms + var(--n, 0) * 45ms + 160ms);
+  }
+
+  [data-design="noir"] .goal-dial {
+    animation: noir-dial 1.1s var(--ease-noir) backwards;
+    animation-delay: calc(var(--i, 0) * 70ms + var(--n, 0) * 45ms + 160ms);
   }
 
   [data-design="noir"] .route-fade {
@@ -683,6 +759,30 @@
   [data-design="noir"] .pulse-dot {
     animation: noir-pulse 2.6s ease-in-out infinite;
   }
+}
+
+/* Row numbers for .stagger-rows, capped: a 100-row ledger's last row would
+   otherwise wait four and a half seconds to appear. Outside the motion query because a
+   number moves nothing; descendants inherit it, which is how a bar inside a
+   row knows when its row arrived. */
+.stagger-rows > * { --n: 0; }
+.stagger-rows > :nth-child(2) { --n: 1; }
+.stagger-rows > :nth-child(3) { --n: 2; }
+.stagger-rows > :nth-child(4) { --n: 3; }
+.stagger-rows > :nth-child(5) { --n: 4; }
+.stagger-rows > :nth-child(6) { --n: 5; }
+.stagger-rows > :nth-child(7) { --n: 6; }
+.stagger-rows > :nth-child(8) { --n: 7; }
+.stagger-rows > :nth-child(9) { --n: 8; }
+.stagger-rows > :nth-child(10) { --n: 9; }
+.stagger-rows > :nth-child(n+11) { --n: 10; }
+
+/* Registered so the goal dial's angle can interpolate; an unregistered custom
+   property can only jump from one value to the other. */
+@property --dial {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
 }
 
 /* Nav hover: a glow the inline active-state colours can't clash with,

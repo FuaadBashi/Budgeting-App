@@ -95,7 +95,7 @@ export function TransactionList({
         </p>
       )}
 
-      <ul className="card vault-ledger divide-y" style={{ borderColor: "var(--gridline)" }}>
+      <ul className="card vault-ledger stagger-rows divide-y" style={{ borderColor: "var(--gridline)" }}>
         {transactions.map((txn) => {
           const voided = txn.status === "voided";
           if (editing === txn.id) {

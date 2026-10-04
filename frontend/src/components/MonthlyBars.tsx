@@ -1,5 +1,6 @@
 "use client";
 
+import type { CSSProperties } from "react";
 import { PICK_PROMPT, useChartSelection } from "@/lib/chartSelection";
 import type { PeriodSummary } from "@/lib/api";
 import { formatMinor } from "@/lib/money";
@@ -69,7 +70,8 @@ export function MonthlyBars({ months }: { months: PeriodSummary[] }) {
           // 2px of surface between the pair so they read as two marks, not one.
           const gap = 0.6;
           return (
-            <g key={m.start}>
+            // --n staggers the months left to right -- see .bar-rise.
+            <g key={m.start} style={{ "--n": i } as CSSProperties}>
               {hover === i && (
                 <rect
                   x={originX + slot * i} y={PAD.top} width={slot} height={PLOT_H}
@@ -83,6 +85,7 @@ export function MonthlyBars({ months }: { months: PeriodSummary[] }) {
                 height={h(m.income_minor)}
                 fill="var(--series-1)"
                 rx="0.4"
+                className="bar-rise"
               />
               <rect
                 x={centre + gap / 2}
@@ -91,6 +94,7 @@ export function MonthlyBars({ months }: { months: PeriodSummary[] }) {
                 height={h(m.expense_minor)}
                 fill="var(--series-2)"
                 rx="0.4"
+                className="bar-rise"
               />
             </g>
           );

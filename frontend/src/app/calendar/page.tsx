@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import { AppShell } from "@/components/AppShell";
 import { BalanceCurve } from "@/components/BalanceCurve";
 import { MatchReview } from "@/components/MatchReview";
@@ -157,7 +158,7 @@ export default async function CalendarPage({
         ) : (
           <>
             {monthView && (
-              <section>
+              <section className="stagger-in" style={{ "--i": 0 } as CSSProperties}>
                 <h2 className="section-label mb-3">Month</h2>
                 <div className="card p-4 sm:p-5">
                   <MonthGrid key={month} data={monthView} month={month} />
@@ -166,7 +167,7 @@ export default async function CalendarPage({
             )}
 
             {calendar && (
-              <section>
+              <section className="stagger-in" style={{ "--i": 1 } as CSSProperties}>
                 <h2 className="section-label mb-3">Projected balance</h2>
                 <div className="card p-5">
                   {/* The question this screen exists to answer: not "a bill
@@ -214,7 +215,7 @@ export default async function CalendarPage({
               </section>
             )}
 
-            <section>
+            <section className="stagger-in" style={{ "--i": 2 } as CSSProperties}>
               <h2 className="section-label mb-3">Next up</h2>
               {upcoming.length === 0 ? (
                 <div className="card p-5 text-sm" style={{ color: "var(--text-muted)" }}>
@@ -222,7 +223,7 @@ export default async function CalendarPage({
                 </div>
               ) : (
                 <div className="card" style={{ borderColor: "var(--gridline)" }}>
-                  <ul className="divide-y" style={{ borderColor: "var(--gridline)" }}>
+                  <ul className="stagger-rows divide-y" style={{ borderColor: "var(--gridline)" }}>
                     {upcoming.map((e, i) => (
                       <CalendarRow key={`${e.day}-${i}`} event={e} />
                     ))}
@@ -239,7 +240,9 @@ export default async function CalendarPage({
                       >
                         Show {rest.length} more
                       </summary>
-                      <ul className="divide-y border-t" style={{ borderColor: "var(--gridline)" }}>
+                      {/* A closed <details> renders nothing, so these rows
+                          animate when it opens rather than unseen on load. */}
+                      <ul className="stagger-rows divide-y border-t" style={{ borderColor: "var(--gridline)" }}>
                         {rest.map((e, i) => (
                           <CalendarRow key={`${e.day}-${i}`} event={e} />
                         ))}
@@ -250,11 +253,11 @@ export default async function CalendarPage({
               )}
             </section>
 
-            <section>
+            <section className="stagger-in" style={{ "--i": 3 } as CSSProperties}>
               <MatchReview instances={instances} transactions={matched} />
             </section>
 
-            <section>
+            <section className="stagger-in" style={{ "--i": 4 } as CSSProperties}>
               <ObligationManager obligations={obligations} categories={categories} />
             </section>
           </>

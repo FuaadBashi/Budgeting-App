@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import { AppShell } from "@/components/AppShell";
 import { ImportInbox } from "@/components/ImportInbox";
 import { ReconcileForm } from "@/components/ReconcileForm";
@@ -64,7 +65,9 @@ export default async function ImportPage() {
               accounts={accounts}
               categories={categories}
             />
-            <ReconcileForm accounts={accounts} />
+            <div className="stagger-in" style={{ "--i": 4 } as CSSProperties}>
+              <ReconcileForm accounts={accounts} />
+            </div>
           </>
         )}
       </main>

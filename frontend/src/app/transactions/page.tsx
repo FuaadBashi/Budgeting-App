@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import Link from "next/link";
 import { AppShell } from "@/components/AppShell";
 import { requireSession } from "@/lib/guard";
@@ -133,11 +134,13 @@ export default async function TransactionsPage({
           </p>
         </header>
 
-        <TransactionFilterBar
-          categories={categories}
-          values={{ q: params.q, category: categoryId, start, end, min: params.min, max: params.max }}
-          showVoided={showVoided}
-        />
+        <div className="stagger-in" style={{ "--i": 0 } as CSSProperties}>
+          <TransactionFilterBar
+            categories={categories}
+            values={{ q: params.q, category: categoryId, start, end, min: params.min, max: params.max }}
+            showVoided={showVoided}
+          />
+        </div>
 
         {unreadable.length > 0 && (
           <div
@@ -164,13 +167,17 @@ export default async function TransactionsPage({
           </div>
         ) : (
           <>
-            <TransactionList
-              transactions={transactions}
-              showVoided={showVoided}
-              categories={categories}
-              expenseAccountIds={expenseAccountIds}
-              accountNames={accountNames}
-            />
+            {/* Not a block of its own: the ledger's rows inherit this slot and
+                follow the filter bar in one by one -- see .stagger-rows. */}
+            <div style={{ "--i": 1 } as CSSProperties}>
+              <TransactionList
+                transactions={transactions}
+                showVoided={showVoided}
+                categories={categories}
+                expenseAccountIds={expenseAccountIds}
+                accountNames={accountNames}
+              />
+            </div>
             {(page > 1 || hasOlder) && (
               <nav className="flex items-center justify-between text-sm" aria-label="Pages">
                 {page > 1 ? (

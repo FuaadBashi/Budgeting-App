@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import { AppShell } from "@/components/AppShell";
 import { BackupPanel } from "@/components/BackupPanel";
 import { DataManager } from "@/components/DataManager";
@@ -51,7 +52,11 @@ export default async function DataPage() {
           </div>
         ) : (
           <>
-            {backups && <BackupPanel status={backups} />}
+            {backups && (
+              <div className="stagger-in" style={{ "--i": 0 } as CSSProperties}>
+                <BackupPanel status={backups} />
+              </div>
+            )}
             <DataManager empty={restoreStatus?.empty ?? false} />
           </>
         )}
