@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, type CSSProperties } from "react";
 import { useRouter } from "next/navigation";
 import {
   openAccounts,
@@ -120,7 +120,7 @@ export function ImportInbox({
 
   return (
     <div className="space-y-8">
-      <section>
+      <section className="stagger-in" style={{ "--i": 0 } as CSSProperties}>
         <h2 className="section-label mb-3">Import a statement</h2>
         <form
           className="card space-y-4 p-5"
@@ -183,7 +183,7 @@ export function ImportInbox({
         </form>
       </section>
 
-      <section>
+      <section className="stagger-in" style={{ "--i": 1 } as CSSProperties}>
         <h2 className="section-label mb-3">Photograph a receipt</h2>
         <form
           className="card space-y-4 p-5"
@@ -250,7 +250,7 @@ export function ImportInbox({
         </p>
       )}
 
-      <section>
+      <section className="stagger-in" style={{ "--i": 2 } as CSSProperties}>
         <div className="mb-3 flex items-baseline justify-between gap-3">
           <h2 className="section-label">Needs a decision</h2>
           <div className="flex items-center gap-3">
@@ -295,7 +295,7 @@ export function ImportInbox({
             Nothing waiting. Imported rows appear here until you accept or decline them.
           </div>
         ) : (
-          <ul className="card divide-y" style={{ borderColor: "var(--gridline)" }}>
+          <ul className="card stagger-rows divide-y" style={{ borderColor: "var(--gridline)" }}>
             {[...pending, ...duplicates].map((row) => (
               <CandidateRow
                 key={row.id}
@@ -313,9 +313,9 @@ export function ImportInbox({
       </section>
 
       {batches.length > 0 && (
-        <section>
+        <section className="stagger-in" style={{ "--i": 3 } as CSSProperties}>
           <h2 className="section-label mb-3">Files imported</h2>
-          <ul className="card divide-y" style={{ borderColor: "var(--gridline)" }}>
+          <ul className="card stagger-rows divide-y" style={{ borderColor: "var(--gridline)" }}>
             {batches.map((b) => (
               <li key={b.id} className="flex flex-wrap items-baseline gap-x-4 gap-y-1 p-4 text-sm">
                 <span className="min-w-0 flex-1" style={{ color: "var(--text-primary)" }}>

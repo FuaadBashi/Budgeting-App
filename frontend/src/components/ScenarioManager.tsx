@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useState, type CSSProperties, type FormEvent } from "react";
 import { ScenarioChart } from "@/components/ScenarioChart";
 import {
   compareScenarios,
@@ -147,7 +147,7 @@ export function ScenarioManager({ initial }: { initial: Scenario[] }) {
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="stagger-rows flex flex-wrap items-center gap-2">
           {scenarios.map((s) => (
             <button
               key={s.id}
@@ -362,7 +362,8 @@ function ResultPanel({
   const rivalLast = rival?.months[rival.months.length - 1];
 
   return (
-    <div className="space-y-6">
+    // One slot behind the scenario picker, so the picker lands first.
+    <div className="stagger-rows space-y-6" style={{ "--i": 1 } as CSSProperties}>
       {result.first_shortfall ? (
         <p
           className="card flex items-start gap-2 p-4 text-sm"

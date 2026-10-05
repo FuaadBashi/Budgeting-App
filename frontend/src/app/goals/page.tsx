@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import { AppShell } from "@/components/AppShell";
 import { GoalManager } from "@/components/GoalManager";
 import { requireSession } from "@/lib/guard";
@@ -59,14 +60,15 @@ export default async function GoalsPage() {
           <>
             {recovery && recovery.gap_minor > 0 && (
               <section
-                className="card p-5"
+                className="card stagger-in p-5"
                 style={{
+                  "--i": 0,
                   boxShadow: `inset 0 0 0 1px ${
                     recovery.recovery_impossible
                       ? "var(--status-critical)"
                       : "var(--status-warning)"
                   }`,
-                }}
+                } as CSSProperties}
               >
                 <p className="text-sm" style={{ color: "var(--text-secondary)" }}>
                   <span
@@ -98,7 +100,7 @@ export default async function GoalsPage() {
               </section>
             )}
 
-            <section>
+            <section className="stagger-in" style={{ "--i": 1 } as CSSProperties}>
               <GoalManager goals={goals} savingsAccounts={savings} />
             </section>
           </>

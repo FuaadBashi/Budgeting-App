@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef, useState, type CSSProperties } from "react";
 import { useRouter } from "next/navigation";
 import { downloadExport, restoreBackup, type RestoreResult } from "@/lib/api";
 
@@ -65,7 +65,7 @@ export function DataManager({ empty }: { empty: boolean }) {
 
   return (
     <div className="space-y-8">
-      <section>
+      <section className="stagger-in" style={{ "--i": 1 } as CSSProperties}>
         <h2 className="section-label mb-3">Export</h2>
         <div className="card space-y-4 p-5">
           <div className="grid gap-4 sm:grid-cols-2">
@@ -113,7 +113,7 @@ export function DataManager({ empty }: { empty: boolean }) {
         </div>
       </section>
 
-      <section>
+      <section className="stagger-in" style={{ "--i": 2 } as CSSProperties}>
         <h2 className="section-label mb-3">Backup</h2>
         <div className="card flex flex-wrap items-center gap-4 p-5">
           <p className="min-w-0 flex-1 text-sm" style={{ color: "var(--text-secondary)" }}>
@@ -206,7 +206,7 @@ function RestorePanel({ empty }: { empty: boolean }) {
   }
 
   return (
-    <section>
+    <section className="stagger-in" style={{ "--i": 3 } as CSSProperties}>
       <h2 className="section-label mb-3">Restore</h2>
       <div
         className="card space-y-4 p-5"

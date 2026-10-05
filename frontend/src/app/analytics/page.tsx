@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import Link from "next/link";
 import { AppShell } from "@/components/AppShell";
 import { requireSession } from "@/lib/guard";
@@ -120,62 +121,70 @@ export default async function AnalyticsPage({
         </header>
 
         <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <StatTile label="Income" value={period.income_minor} explanation={{
-            description: "Actual recorded income in the selected dates, not expected payments or opening balances.",
-            formula: "Sum of posted income within the reporting period",
-            note: `Reporting dates: ${period.start} to ${period.end}. Transfers between your own accounts do not create income.`,
-          }} />
-          <StatTile label="Spending" value={period.expense_minor} explanation={{
-            description: "Net recorded expenses for this reporting period; saving transfers are not ordinary spending.",
-            formula: "Sum of category spending, net of applicable refunds and reimbursements",
-            rows: period.by_category.map(c => ({ label: c.name, value: c.amount_minor })),
-          }} />
-          <StatTile
-            label="Savings rate"
-            explanation={{
-              description: "The share of income not consumed by spending—not the percentage transferred into savings.",
-              formula: "(Income − spending) ÷ income × 100",
-              rows: [{ label: "Income", value: period.income_minor }, { label: "Spending deducted", value: -period.expense_minor }],
-              note: period.savings_rate === null ? "No income was recorded, so division by income is undefined. The dash is not a 0% rate." : "The displayed percentage is rounded to a whole percent.",
-            }}
-            // The standard definition: what share of income was not consumed.
-            // Null is a distinct state -- no income is not the same as 0% saved.
-            value={
-              period.savings_rate === null
-                ? "—"
-                : `${Math.round(period.savings_rate * 100)}%`
-            }
-            tone={
-              period.savings_rate === null
-                ? "neutral"
-                : period.savings_rate > 0
-                  ? "good"
-                  : "critical"
-            }
-            support={
-              period.savings_rate === null
-                ? "No income recorded this period."
-                : "Share of income not spent."
-            }
-          />
-          <StatTile
-            label="Set aside"
-            explanation={{
-              description: "Recorded net savings and investment contributions, not an estimate of what you could save.",
-              formula: "Recorded savings and investment movements in the reporting period",
-              note: "Moving your own money into savings is a transfer, not new income. Planned goal contributions are not counted as transfers already made.",
-            }}
-            value={period.saved_minor}
-            tone={period.saved_minor > 0 ? "good" : "neutral"}
-            support={
-              period.set_aside_rate === null
-                ? "Moved to savings or investments — a transfer, not spending."
-                : `${Math.round(period.set_aside_rate * 100)}% of income, moved deliberately.`
-            }
-          />
+          <div className="stagger-in" style={{ "--i": 0 } as CSSProperties}>
+            <StatTile label="Income" value={period.income_minor} explanation={{
+              description: "Actual recorded income in the selected dates, not expected payments or opening balances.",
+              formula: "Sum of posted income within the reporting period",
+              note: `Reporting dates: ${period.start} to ${period.end}. Transfers between your own accounts do not create income.`,
+            }} />
+          </div>
+          <div className="stagger-in" style={{ "--i": 1 } as CSSProperties}>
+            <StatTile label="Spending" value={period.expense_minor} explanation={{
+              description: "Net recorded expenses for this reporting period; saving transfers are not ordinary spending.",
+              formula: "Sum of category spending, net of applicable refunds and reimbursements",
+              rows: period.by_category.map(c => ({ label: c.name, value: c.amount_minor })),
+            }} />
+          </div>
+          <div className="stagger-in" style={{ "--i": 2 } as CSSProperties}>
+            <StatTile
+              label="Savings rate"
+              explanation={{
+                description: "The share of income not consumed by spending—not the percentage transferred into savings.",
+                formula: "(Income − spending) ÷ income × 100",
+                rows: [{ label: "Income", value: period.income_minor }, { label: "Spending deducted", value: -period.expense_minor }],
+                note: period.savings_rate === null ? "No income was recorded, so division by income is undefined. The dash is not a 0% rate." : "The displayed percentage is rounded to a whole percent.",
+              }}
+              // The standard definition: what share of income was not consumed.
+              // Null is a distinct state -- no income is not the same as 0% saved.
+              value={
+                period.savings_rate === null
+                  ? "—"
+                  : `${Math.round(period.savings_rate * 100)}%`
+              }
+              tone={
+                period.savings_rate === null
+                  ? "neutral"
+                  : period.savings_rate > 0
+                    ? "good"
+                    : "critical"
+              }
+              support={
+                period.savings_rate === null
+                  ? "No income recorded this period."
+                  : "Share of income not spent."
+              }
+            />
+          </div>
+          <div className="stagger-in" style={{ "--i": 3 } as CSSProperties}>
+            <StatTile
+              label="Set aside"
+              explanation={{
+                description: "Recorded net savings and investment contributions, not an estimate of what you could save.",
+                formula: "Recorded savings and investment movements in the reporting period",
+                note: "Moving your own money into savings is a transfer, not new income. Planned goal contributions are not counted as transfers already made.",
+              }}
+              value={period.saved_minor}
+              tone={period.saved_minor > 0 ? "good" : "neutral"}
+              support={
+                period.set_aside_rate === null
+                  ? "Moved to savings or investments — a transfer, not spending."
+                  : `${Math.round(period.set_aside_rate * 100)}% of income, moved deliberately.`
+              }
+            />
+          </div>
         </section>
 
-        <section>
+        <section className="stagger-in" style={{ "--i": 4 } as CSSProperties}>
           <h2 className="section-label mb-3">Income and spending by month</h2>
           <div className="card p-5">
             {active.length > 0 ? (
@@ -240,14 +249,14 @@ export default async function AnalyticsPage({
         </section>
 
         <section className="grid gap-4 lg:grid-cols-2">
-          <div>
+          <div className="stagger-in" style={{ "--i": 5 } as CSSProperties}>
             <h2 className="section-label mb-3">Spending by category</h2>
             <div className="card p-5">
               <CategoryBars categories={period.by_category} start={period.start} end={period.end} />
             </div>
           </div>
 
-          <div>
+          <div className="stagger-in" style={{ "--i": 6 } as CSSProperties}>
             <h2 className="section-label mb-3">Top merchants</h2>
             <div className="card p-5">
               {period.by_merchant.length === 0 ? (
@@ -256,7 +265,7 @@ export default async function AnalyticsPage({
                   see them here.
                 </p>
               ) : (
-                <dl className="space-y-2">
+                <dl className="stagger-rows space-y-2">
                   {period.by_merchant.slice(0, 8).map(([name, amount]) => (
                     <div key={name} className="flex justify-between text-sm">
                       <dt style={{ color: "var(--text-secondary)" }}>{name}</dt>
@@ -272,7 +281,7 @@ export default async function AnalyticsPage({
         </section>
 
         {allocation && (
-          <section>
+          <section className="stagger-in" style={{ "--i": 7 } as CSSProperties}>
             <h2 className="section-label mb-3">Needs, wants and savings (50/30/20)</h2>
             <div className="card p-5">
               <AllocationCard report={allocation} />
@@ -280,7 +289,7 @@ export default async function AnalyticsPage({
           </section>
         )}
 
-        <section>
+        <section className="stagger-in" style={{ "--i": 8 } as CSSProperties}>
           <h2 className="section-label mb-3">Export</h2>
           <div className="card flex flex-wrap gap-3 p-5">
             <a

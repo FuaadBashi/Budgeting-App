@@ -152,7 +152,7 @@ export function ObligationManager({
           No commitments yet. Safe to spend reserves nothing for upcoming bills until you add one.
         </div>
       ) : (
-        <ul className="card divide-y" style={{ borderColor: "var(--gridline)" }}>
+        <ul className="card stagger-rows divide-y" style={{ borderColor: "var(--gridline)" }}>
           {obligations.map((o) => (
             <li key={o.id} className="flex flex-wrap items-baseline gap-x-4 gap-y-1 p-4">
               <span className="min-w-0 flex-1">

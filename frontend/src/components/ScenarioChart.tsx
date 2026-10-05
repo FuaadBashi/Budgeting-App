@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type CSSProperties } from "react";
 import { PICK_PROMPT, useChartSelection } from "@/lib/chartSelection";
 import type { ScenarioMonth } from "@/lib/api";
 import { formatMinor } from "@/lib/money";
@@ -135,9 +135,14 @@ export function ScenarioChart({
           </text>
         ))}
 
-        {SERIES.map((s) => (
+        {/* Inert outside noir: .chart-draw only animates there, and pathLength
+            changes nothing while the line has no dash pattern. */}
+        {SERIES.map((s, n) => (
           <polyline
             key={s.key}
+            className="chart-draw"
+            pathLength={1}
+            style={{ animationDelay: `${n * 160}ms` } as CSSProperties}
             points={months.map((m, i) => `${x(i)},${y(m[s.key])}`).join(" ")}
             fill="none"
             stroke={s.colour}
