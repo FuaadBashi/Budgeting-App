@@ -179,7 +179,6 @@ function RailNav({ design }: { design: "noir" | "console" }) {
             item={item}
             index={i}
             numbered={design === "console"}
-            stagger={design === "noir"}
           />
         ))}
       </nav>
@@ -202,19 +201,18 @@ function RailLink({
   item,
   index,
   numbered,
-  stagger,
 }: {
   item: Item;
   index: number;
   numbered: boolean;
-  stagger: boolean;
 }) {
   const current = useIsCurrent(item.href);
-  const className = `navlink flex h-10 w-10 items-center justify-center rounded-[var(--radius-sm)] ${stagger ? "stagger-in" : ""}`;
+  // Both rail designs cascade their items in, each in its own way.
+  const className = "navlink stagger-in flex h-10 w-10 items-center justify-center rounded-[var(--radius-sm)]";
   const style: CSSProperties & Record<string, string | number> = current
     ? { background: "var(--accent-soft)", color: "var(--accent-text)" }
     : { color: "var(--text-muted)" };
-  if (stagger) style["--i"] = index;
+  style["--i"] = index;
   const content = numbered ? (
     <span className="font-display text-[11px]">{String(index + 1).padStart(2, "0")}</span>
   ) : (
