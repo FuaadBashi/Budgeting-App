@@ -41,10 +41,10 @@ presentation change; financial calculations and API contracts are unchanged.
 | 10 | Polish, backups, hosting | ◐ backups and exposure hardening done; the deploy itself is yours |
 | 11 | Assisted categorisation (LLM) | ✅ |
 
-**Phases 0–9 and 11 complete; Phase 10's backup half is done.** 974 tests. Deployment is the
-only substantial thing left from the original plan, and `docs/RUNNING.md` already describes the
-setup worth having (Tailscale, real certificates, nothing exposed to the internet) — but see
-"Recommended next task" below, which is not that.
+**Phases 0–9 and 11 complete; Phase 10's backup half is done.** 975 backend tests and 25
+browser tests. Deployment is the only substantial thing left from the original plan, and
+`docs/RUNNING.md` already describes the setup worth having (Tailscale, real certificates, nothing
+exposed to the internet) — but see "Recommended next task" below, which is not that.
 
 Frontend has eleven screens — dashboard, transactions, accounts, analytics, insights, budgets,
 calendar, goals, simulator, import and data — and every nav item is live. Accounts, categories,
@@ -223,13 +223,22 @@ where something lives.
 names (`--surface-1`, `--text-primary`, `--accent`, `--radius`, `--font-display`, ...) regardless
 of which design is active. Colour tokens are keyed by `[data-design="x"][data-theme="y"]`; shape
 tokens (radius, border weight, which typeface plays which role) are keyed by `[data-design="x"]`
-alone, since they do not change between light and dark. `<html>` carries both attributes, written
-by `DesignProvider` — nowhere else. See `docs/DECISIONS.md`'s design-system entry for why the
-values are what they are and what the four are named.
+alone, since they do not change between light and dark. `<html>` is served carrying the default
+pair by `app/layout.tsx`; `DesignProvider` writes a stored choice over it, and nothing else does.
+See `docs/DECISIONS.md`'s design-system entry for why the values are what they are and what the
+four are named.
 
 Text or icons drawn on `--accent` use `--on-accent`, chosen per palette to clear 4.5:1.
 `backend/tests/unit/test_design_tokens.py` fails if a palette lacks it, if it drops below AA, or if a
 component puts a fixed colour on the accent.
+
+**Browser tests** (`frontend/e2e/`, Playwright) run the real stack: `playwright.config.ts`
+migrates and seeds a database whose name must end in `_e2e`, then starts the API on :8100 and a
+production build on :3100. `flows.spec.ts` drives the transaction form and a category rename
+through to the ledger; `motion.spec.ts` checks hover lift, reduced motion and that the entrance
+starts from the server's HTML; `screens.spec.ts` sweeps every screen in every design for AA
+contrast and for sideways scroll at phone width. Each asserts against the figure before it, never
+a fixed amount, because the seed dates everything from today.
 
 ---
 
@@ -592,4 +601,11 @@ Verify a change end to end with:
 
 ```bash
 cd backend && ./.venv/bin/python -m pytest -q && ./.venv/bin/python scripts/seed_demo.py
+```
+
+and the browser tests, which need Postgres and a disposable database (created once with
+`createdb budgetapp_e2e`):
+
+```bash
+cd frontend && E2E_DATABASE_URL=postgresql+psycopg://localhost/budgetapp_e2e npm run e2e
 ```

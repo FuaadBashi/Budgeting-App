@@ -62,12 +62,14 @@ restore it byte-for-byte, and check the SHA matches.
 
 ## Tests
 
-`cd backend && .venv/bin/python -m pytest -q`. Name tests as sentences stating
-the claim. A test must not write outside `tmp_path`, hit the network, or depend
-on the day it runs — a fixture pinned to a fixed month will pass until that month
-ends and then lie. `conftest` disables auth and the backup scheduler globally;
-anything else that writes files or starts background work must be disabled there
-too.
+`cd backend && .venv/bin/python -m pytest -q`. Browser tests:
+`cd frontend && E2E_DATABASE_URL=…/budgetapp_e2e npm run e2e`; the run reseeds
+that database, so the config refuses any name not ending in `_e2e`. Name tests
+as sentences stating the claim. A test must not write outside `tmp_path`, hit
+the network, or depend on the day it runs — a fixture pinned to a fixed month
+will pass until that month ends and then lie. `conftest` disables auth and the
+backup scheduler globally; anything else that writes files or starts background
+work must be disabled there too.
 
 ## Style
 
