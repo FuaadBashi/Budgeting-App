@@ -30,7 +30,7 @@ import tempfile
 import uuid
 from dataclasses import dataclass
 from datetime import date, datetime, timezone
-from decimal import Decimal
+from decimal import ROUND_HALF_UP, Decimal
 from pathlib import Path
 
 from sqlalchemy import select
@@ -38,7 +38,7 @@ from sqlalchemy.orm import Session
 
 from app.domain.clock import now as utc_now, today as clock_today
 from app.models import Base
-from app.models.ledger import Account, Category, Transaction
+from app.models.ledger import Account, Category, Posting, Transaction
 
 BACKUP_TABLES = (
     "categories",
@@ -74,6 +74,21 @@ def _json_value(value):
     if isinstance(value, enum.Enum):
         return value.value
     return value
+
+
+def _as_stored(attribute, value: Decimal | None) -> str | None:
+    """A decimal at its column's scale, which is how the database returns it.
+
+    An object this session built still holds the Decimal it was given, so a
+    posting made from "2500" reads "2500" until the session lets go of it and
+    "2500.0000" once it is loaded back. Which one the readable half of a backup
+    met depended on garbage collection, so the same data could serialise two
+    ways. Half-up matches how Postgres rounds on the way in.
+    """
+    if value is None:
+        return None
+    step = Decimal(1).scaleb(-attribute.type.scale)
+    return str(value.quantize(step, rounding=ROUND_HALF_UP))
 
 
 def _table_rows(session: Session, name: str) -> list[dict]:
@@ -165,15 +180,13 @@ def build_payload(session: Session) -> dict:
             "name": a.name,
             "kind": a.kind.value,
             "currency": a.currency,
-            "opening_balance": str(a.opening_balance),
+            "opening_balance": _as_stored(Account.opening_balance, a.opening_balance),
             "active": a.active,
             "default_category_id": (
                 str(a.default_category_id) if a.default_category_id else None
             ),
-            "apr": str(a.apr) if a.apr is not None else None,
-            "minimum_payment": (
-                str(a.minimum_payment) if a.minimum_payment is not None else None
-            ),
+            "apr": _as_stored(Account.apr, a.apr),
+            "minimum_payment": _as_stored(Account.minimum_payment, a.minimum_payment),
         }
         for a in session.scalars(select(Account).order_by(Account.name, Account.id))
     ]
@@ -206,7 +219,7 @@ def build_payload(session: Session) -> dict:
                         "id": str(p.id),
                         "account_id": str(p.account_id),
                         "category_id": str(p.category_id) if p.category_id else None,
-                        "amount": str(p.amount),
+                        "amount": _as_stored(Posting.amount, p.amount),
                         "currency": p.currency,
                     }
                     # The relationship itself is unordered.

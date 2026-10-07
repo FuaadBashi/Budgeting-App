@@ -73,6 +73,26 @@ def test_the_written_file_matches_the_export_endpoint_byte_for_byte(
     assert json.loads(from_disk) == json.loads(from_api)
 
 
+def test_an_amount_reads_as_stored_while_the_session_still_holds_the_object_that_made_it(
+    session, accounts
+):
+    """B-A. A posting built from "2500" holds Decimal("2500") until the session
+    lets go of it, and the same row loaded back reads "2500.0000". The readable
+    half of the backup once printed whichever it met, so two backups of the same
+    data differed with nothing but garbage collection between them."""
+    kept = post(session, date(2026, 8, 1), "Salary",
+                [(accounts["current"], "2500"), (accounts["salary"], "-2500")])
+    assert kept.postings[0].amount == Decimal("2500")
+
+    while_held = backup.build_payload(session)
+    session.expire_all()
+    reloaded = backup.build_payload(session)
+
+    assert while_held == reloaded
+    amounts = {p["amount"] for t in while_held["transactions"] for p in t["postings"]}
+    assert amounts == {"2500.0000", "-2500.0000"}
+
+
 LOW = uuid.UUID("00000000-0000-4000-8000-000000000001")
 HIGH = uuid.UUID("ffffffff-ffff-4fff-bfff-fffffffffffe")
 
