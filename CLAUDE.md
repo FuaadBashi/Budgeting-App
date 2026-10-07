@@ -5,7 +5,7 @@ Router + Tailwind. Single user, GBP.
 
 **Read `docs/HANDOFF.md` first** — phase table, architecture map (backend
 module table *and* a file-by-file frontend map, so you can find a component
-without grepping), the invariant register (X1–X22) and a traps section listing
+without grepping), the invariant register (X1–X30) and a traps section listing
 bugs already found and fixed. `docs/DECISIONS.md` records why things are the
 way they are; `docs/RUNNING.md` covers phone and desktop setup.
 

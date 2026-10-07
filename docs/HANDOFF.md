@@ -123,7 +123,7 @@ live; routes only translate to and from integer minor units.
 | `auth.py` | Password hashing, session cookies, the route guard |
 | `domain/disposable.py` | Safe to spend, net worth, account balances |
 | `domain/profile.py` | The settings row; `protected_buffer`, the one read of the buffer every engine subtracts |
-| `domain/account_lifecycle.py` | What archiving an account requires, and what an archived account refuses (X23) |
+| `domain/account_lifecycle.py` | What archiving an account requires, and what an archived account refuses (X30) |
 | `domain/classification.py` | Derived transaction type |
 | `domain/simulation.py` | Scenario projection; reads the ledger, writes nothing (P1) |
 | `domain/importing.py` | Statement parsing, duplicate detection, acceptance (M1–M4) |
@@ -262,7 +262,6 @@ calendar, simulation. `BUDGET_ENGINE_SPEC.md` §4 lists ten contradiction points
 | X20 | A receipt reaches the ledger only through the candidate inbox (A1') | ✅ `test_receipts.py` — staging leaves balances and transaction count untouched |
 | X21 | The merchant baseline reads the same postings `Spent` does, netted the same way | ✅ Shared `_legs_in_scope` selector for scope; shared `reimbursement._offsets` walk for netting. `test_merchant_anomaly.py::test_the_baseline_reads_the_same_postings_budget_spent_does` and `::test_a_fully_reimbursed_trip_does_not_trip_the_merchant_warning` |
 | X22 | An account default is stamped on the write, never derived on the read | ✅ `test_account_defaults.py` — changing a default leaves written postings alone, and a restore reproduces the file |
-| X23 | An archived account holds nothing, so engines that skip inactive accounts agree with net worth, which reads them all | ✅ `account_lifecycle`: archiving needs a zero balance, and posting to, accepting into or voiding against an archived account is refused. `test_account_lifecycle.py::test_archiving_an_empty_account_leaves_every_headline_figure_unchanged` and `::test_voiding_a_transaction_on_an_archived_account_is_refused` |
 | X23 | A category the second opinion rejects is never cached as an answer, and is surfaced on the candidate, not just silently blanked | ✅ `test_enrichment.py::test_a_downgraded_pick_is_not_cached_at_all`, `::test_a_downgraded_merchant_is_asked_about_again_next_time`; `test_receipts.py::test_a_second_check_that_disagrees_is_surfaced_not_applied` |
 | X24 | Safe-to-spend, the balance curve and the projection release an obligation on the same event | ✅ `test_cross_engine_guards.py::test_X24_every_forecast_engine_drops_an_obligation_on_the_same_event`, plus `test_obligation_api.py::test_projected_spend_is_the_same_whether_or_not_a_match_is_confirmed` |
 | X25 | An automatic obligation match is unambiguous and reversible | ✅ `test_obligation_api.py::test_an_ambiguous_same_amount_pair_is_not_auto_matched`, `::test_unmatching_restores_the_commitment_and_survives_sync` |
@@ -270,6 +269,7 @@ calendar, simulation. `BUDGET_ENGINE_SPEC.md` §4 lists ten contradiction points
 | X27 | Recurring-rule edits change the future, never historical occurrences | ✅ `test_obligation_api.py::test_changing_the_amount_rewrites_only_current_and_future_instances`, `::test_shortening_and_clearing_the_end_date_reshapes_only_the_future_schedule` |
 | X28 | A bank feed remains idempotent when its ledger-account mapping changes | ✅ `test_bank_sync.py::test_remapping_a_link_does_not_restage_a_row` |
 | X29 | Portable backups never carry live bank consent credentials | ✅ `test_backup.py::test_bank_consent_credentials_are_redacted_and_restore_as_revoked` |
+| X30 | An archived account holds nothing, so engines that skip inactive accounts agree with net worth, which reads them all | ✅ `account_lifecycle`: archiving needs a zero balance, and posting to, accepting into or voiding against an archived account is refused. `test_account_lifecycle.py::test_archiving_an_empty_account_leaves_every_headline_figure_unchanged` and `::test_voiding_a_transaction_on_an_archived_account_is_refused` |
 
 ### Assisted categorisation and receipt reading (Phases 7 and 11)
 
@@ -396,7 +396,7 @@ each with named tests.
 6. ~~Accounts can be created on `/accounts`, but not renamed or archived.~~ Done.
    `PATCH /api/accounts/{id}` takes `name` and `active`. Archiving is refused while the account
    holds money or an active goal, commitment, expected income or bank feed still uses it; after
-   that, nothing may post to, accept into or void against it (X23). Pickers for new money skip
+   that, nothing may post to, accept into or void against it (X30). Pickers for new money skip
    archived accounts, and history keeps their names. Categories can be created; renaming one is
    a bigger question, because the name is what every past budget breakdown was read under.
 7. ~~**The protected cash buffer has no API or UI.**~~ Done. `GET`/`PUT /api/protected-buffer`
