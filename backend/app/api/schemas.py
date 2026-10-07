@@ -13,7 +13,7 @@ from decimal import ROUND_HALF_EVEN, Decimal
 
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from app.models.enums import (
     AccountKind,
@@ -106,6 +106,47 @@ class CategoryIn(BaseModel):
     name: str = Field(min_length=1, max_length=120)
     parent_id: uuid.UUID | None = None
     nature: CategoryNature = CategoryNature.DISCRETIONARY
+
+
+class CategoryEditIn(BaseModel):
+    """A category's new name -- and only that.
+
+    A rename relabels history as well as the future, and should: every figure
+    reads the name through the category's id when it is computed, and the money
+    filed under it has not moved. A new nature or parent would move it. Nature
+    decides what the discretionary budget and the 50/30/20 split count, and the
+    parent decides what a parent-scoped budget counts, so either would rewrite
+    what a closed period spent. Those are refused by name rather than by the
+    generic unknown-field error, so the reason reaches the person.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    name: str = Field(min_length=1, max_length=120)
+
+    @model_validator(mode="before")
+    @classmethod
+    def _no_reclassifying(cls, data: Any) -> Any:
+        if isinstance(data, dict):
+            if "nature" in data:
+                raise ValueError(
+                    "a category's nature cannot be changed: it would move past spending "
+                    "between essential and discretionary in months already closed"
+                )
+            if "parent_id" in data:
+                raise ValueError(
+                    "a category cannot be moved under another parent: it would change "
+                    "what past budgets for either parent counted"
+                )
+        return data
+
+    @field_validator("name")
+    @classmethod
+    def _name_has_text(cls, value: str) -> str:
+        value = value.strip()
+        if not value:
+            raise ValueError("a category name needs at least one visible character")
+        return value
 
 
 class CategoryOut(BaseModel):

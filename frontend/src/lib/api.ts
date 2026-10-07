@@ -517,6 +517,9 @@ export interface CategoryInput {
   nature: Category["nature"];
 }
 export const createCategory = (input: CategoryInput) => post<Category>("/categories", input);
+/** Only the name: the API refuses a new nature or parent, which would rewrite past budgets. */
+export const renameCategory = (id: string, name: string) =>
+  patch<Category>(`/categories/${id}`, { name });
 
 /** Rulebook section 4's floor of cash that safe to spend never counts as spendable. */
 export interface ProtectedBuffer {

@@ -41,7 +41,7 @@ presentation change; financial calculations and API contracts are unchanged.
 | 10 | Polish, backups, hosting | ◐ backups and exposure hardening done; the deploy itself is yours |
 | 11 | Assisted categorisation (LLM) | ✅ |
 
-**Phases 0–9 and 11 complete; Phase 10's backup half is done.** 961 tests. Deployment is the
+**Phases 0–9 and 11 complete; Phase 10's backup half is done.** 974 tests. Deployment is the
 only substantial thing left from the original plan, and `docs/RUNNING.md` already describes the
 setup worth having (Tailscale, real certificates, nothing exposed to the internet) — but see
 "Recommended next task" below, which is not that.
@@ -177,7 +177,7 @@ where something lives.
 |---|---|
 | `AppShell.tsx` | Nav chrome for all four designs (rail / masthead / dock / rail+command-bar); mobile top bar and bottom tabs (four plus a More sheet), identical across designs |
 | `PreferencesPanel.tsx` | The gear-icon control: pick a design, pick System/Light/Dark. `placement="rail"` puts it inside the icon rail |
-| `AccountManager.tsx` | Account and category lists and creation forms, with per-account rename, archive and restore; the one line where "amount owed" becomes a negative balance |
+| `AccountManager.tsx` | Account and category lists and creation forms, with per-account rename, archive and restore and per-category rename (one shared `RenameForm`); the one line where "amount owed" becomes a negative balance |
 | `BufferSetting.tsx` | The protected cash buffer card on Accounts (`#buffer`); the dashboard's "none set" note links to it |
 | `SetupChecklist.tsx` | What the ledger still needs before Add can record anything; on the dashboard and Accounts |
 | `StatTile.tsx` | Label + value + optional support/footnote; `lead` marks the one hero figure per screen |
@@ -397,8 +397,10 @@ each with named tests.
    `PATCH /api/accounts/{id}` takes `name` and `active`. Archiving is refused while the account
    holds money or an active goal, commitment, expected income or bank feed still uses it; after
    that, nothing may post to, accept into or void against it (X30). Pickers for new money skip
-   archived accounts, and history keeps their names. Categories can be created; renaming one is
-   a bigger question, because the name is what every past budget breakdown was read under.
+   archived accounts, and history keeps their names. Categories can now be renamed too:
+   `PATCH /api/categories/{id}` takes `name` only, and the rename relabels past breakdowns as
+   well, because they read the name through the id. A new nature or parent is refused with its
+   reason; see `docs/DECISIONS.md`, *A category rename relabels history*.
 7. ~~**The protected cash buffer has no API or UI.**~~ Done. `GET`/`PUT /api/protected-buffer`
    sets it from a card on Accounts, and the dashboard's "none set" note links there. Every engine
    reads it through `domain/profile.protected_buffer`, so the card shows what each one subtracts.
