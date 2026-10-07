@@ -34,14 +34,20 @@ export const metadata: Metadata = {
 
 //: The design/appearance a returning visitor last chose is applied by
 //: `DesignProvider` itself, via `useLayoutEffect` -- see `lib/design.tsx` for
-//: why that lives there and not in a blocking boot script here. `<html>`
-//: therefore carries no data-design/data-theme of its own; the bare :root
-//: fallback in globals.css (== Vault Noir, dark) is what paints before that
-//: effect runs.
+//: why that lives there and not in a blocking boot script here.
+//:
+//: `<html>` is served carrying the defaults (DEFAULT_DESIGN, DEFAULT_APPEARANCE
+//: in that file), which paint exactly as the bare :root fallback does. Without
+//: them every motion rule, being scoped to a design, started matching only
+//: once that effect ran after hydration: the page painted whole, then jumped
+//: back to hidden to play its entrance. With them a default visitor's
+//: entrance starts at first paint. The effect still corrects a stored choice.
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"
+      data-design="noir"
+      data-theme="dark"
       className={`${geistSans.variable} ${geistMono.variable} ${designFontVariables} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">

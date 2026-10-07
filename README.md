@@ -6,6 +6,8 @@ A ledger-first personal finance platform: track transactions, plan against budge
 see what upcoming commitments do to your cash. Built from the *Personal Finance OS* project plan,
 with the accounting model settled before anything else.
 
+![The dashboard in Vault Noir: safe to spend, today's allowance, projected savings, the next commitment and a 90-day cash runway against a protected buffer](docs/screenshots/dashboard-noir.png)
+
 Three documents govern the code:
 
 | | |
@@ -40,6 +42,36 @@ gear icon on every screen. See `docs/HANDOFF.md`'s Frontend section for where it
 Left to do: the deploy itself and the product decision about whether to retain four visual
 directions or consolidate them. `docs/RUNNING.md` describes the deploy setup worth having —
 Tailscale, real certificates, nothing exposed to the internet.
+
+## Screenshots
+
+All figures are the fictional household `scripts/seed_demo.py` creates.
+
+**Four designs, one set of components.** Each is a token set in `globals.css` with its own light
+and dark palette, switched from the gear icon.
+
+| Vault Noir: quiet, dark, expensive | Field Ledger: a financial paper |
+|---|---|
+| ![Dashboard in Vault Noir](docs/screenshots/dashboard-noir.png) | ![Dashboard in Field Ledger](docs/screenshots/dashboard-field.png) |
+| **Raw Ledger: loud, hard-edged** | **Command Ledger: an engineered console** |
+| ![Dashboard in Raw Ledger](docs/screenshots/dashboard-raw.png) | ![Dashboard in Command Ledger](docs/screenshots/dashboard-console.png) |
+
+**Each design moves in its own way.** The same Analytics screen arriving in Vault Noir (rises out of
+a blur), Field Ledger (inks in place), Raw Ledger (drops in hard, in steps) and Command Ledger
+(repaints like a console). With reduced motion set, none of it plays.
+
+![The Analytics screen entering in each of the four designs in turn](docs/screenshots/motion.gif)
+
+**Every figure shows its working.** Nothing derived is stored, so Insights can show each headline
+number as the sum it actually is.
+
+![Insights: a goal at risk, then safe to spend, total accessible and net worth each broken into their terms](docs/screenshots/insights.png)
+
+| Analytics over six months | Calendar: what happened and what is committed |
+|---|---|
+| ![Analytics: income, spending, savings rate, monthly bars, spending by category and top merchants](docs/screenshots/analytics.png) | ![Calendar month grid with each day's money in and out](docs/screenshots/calendar.png) |
+| **Budgets with rollover and a daily allowance** | **Recording a transaction: the app writes the ledger legs** |
+| ![Budgets: per-period cards with spent, remaining, carried in and an expected-spend marker](docs/screenshots/budgets.png) | ![The Add form filled in for a lunch expense](docs/screenshots/add-transaction.png) |
 
 ## Design in one paragraph
 

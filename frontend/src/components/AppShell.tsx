@@ -153,8 +153,18 @@ function useIsCurrent(href?: string) {
    icons and a brand mark is deliberately absent (see file header).
    ============================================================ */
 
+//: Whether a rail has already cascaded in during this visit. Every page renders
+//: its own AppShell, so the rail remounts on each navigation and, left alone,
+//: replayed its entrance every time -- a sidebar re-printing itself pulls the
+//: eye from the page that just changed. Module state, so a full reload resets it.
+let railHasEntered = false;
+
 function RailNav({ design }: { design: "noir" | "console" }) {
   const width = design === "noir" ? "w-16" : "w-14";
+  const [stagger] = useState(() => !railHasEntered);
+  useEffect(() => {
+    railHasEntered = true;
+  }, []);
   return (
     // overflow-y-auto is the last resort for very short screens only: the
     // ambient filler below gives up its height first, so at 720px everything
@@ -179,6 +189,7 @@ function RailNav({ design }: { design: "noir" | "console" }) {
             item={item}
             index={i}
             numbered={design === "console"}
+            stagger={stagger}
           />
         ))}
       </nav>
@@ -201,18 +212,20 @@ function RailLink({
   item,
   index,
   numbered,
+  stagger,
 }: {
   item: Item;
   index: number;
   numbered: boolean;
+  stagger: boolean;
 }) {
   const current = useIsCurrent(item.href);
-  // Both rail designs cascade their items in, each in its own way.
-  const className = "navlink stagger-in flex h-10 w-10 items-center justify-center rounded-[var(--radius-sm)]";
+  // Both rail designs cascade their items in, each in its own way, once a visit.
+  const className = `navlink flex h-10 w-10 items-center justify-center rounded-[var(--radius-sm)] ${stagger ? "stagger-in" : ""}`;
   const style: CSSProperties & Record<string, string | number> = current
     ? { background: "var(--accent-soft)", color: "var(--accent-text)" }
     : { color: "var(--text-muted)" };
-  style["--i"] = index;
+  if (stagger) style["--i"] = index;
   const content = numbered ? (
     <span className="font-display text-[11px]">{String(index + 1).padStart(2, "0")}</span>
   ) : (
