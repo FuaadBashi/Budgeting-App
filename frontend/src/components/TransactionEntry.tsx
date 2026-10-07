@@ -14,7 +14,6 @@ import {
   type Account,
   type Category,
 } from "@/lib/api";
-import { useDesign } from "@/lib/design";
 import { formatMinor, parseMajorToMinor } from "@/lib/money";
 
 type EntryKind = "expense" | "income" | "transfer" | "refund";
@@ -76,7 +75,6 @@ export function TransactionEntry({
   iconOnly?: boolean;
 }) {
   const router = useRouter();
-  const { design } = useDesign();
   const [open, setOpen] = useState(false);
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -283,7 +281,7 @@ export function TransactionEntry({
       {notice && (
         <Overlay>
           <div
-            className={`fixed right-4 top-4 z-50 rounded-[var(--radius-sm)] px-4 py-3 text-sm shadow-[var(--shadow-raised)] ${design === "noir" ? "modal-in" : ""}`}
+            className="fixed right-4 top-4 z-50 rounded-[var(--radius-sm)] px-4 py-3 text-sm shadow-[var(--shadow-raised)] modal-in"
             style={{ background: "var(--surface-1)", color: "var(--success-text)" }}
             role="status"
           >
@@ -295,7 +293,7 @@ export function TransactionEntry({
       {open && (
         <Overlay>
         <div
-          className={`fixed inset-0 z-40 flex items-end justify-center bg-black/35 p-0 sm:items-center sm:p-6 ${design === "noir" ? "backdrop-in" : ""}`}
+          className="fixed inset-0 z-40 flex items-end justify-center bg-black/35 p-0 sm:items-center sm:p-6 backdrop-in"
           onMouseDown={(event) => {
             if (event.target === event.currentTarget && !saving) setOpen(false);
           }}
@@ -304,7 +302,7 @@ export function TransactionEntry({
             role="dialog"
             aria-modal="true"
             aria-labelledby="transaction-entry-title"
-            className={`max-h-[92dvh] w-full overflow-y-auto rounded-t-[var(--radius)] p-5 shadow-[var(--shadow-raised)] sm:max-w-xl sm:rounded-[var(--radius)] sm:p-6 ${design === "noir" ? "modal-in" : ""}`}
+            className="max-h-[92dvh] w-full overflow-y-auto rounded-t-[var(--radius)] p-5 shadow-[var(--shadow-raised)] sm:max-w-xl sm:rounded-[var(--radius)] sm:p-6 modal-in"
             style={{ background: "var(--surface-1)" }}
           >
             <div className="flex items-start justify-between gap-4">

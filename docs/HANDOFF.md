@@ -41,7 +41,7 @@ presentation change; financial calculations and API contracts are unchanged.
 | 10 | Polish, backups, hosting | ◐ backups and exposure hardening done; the deploy itself is yours |
 | 11 | Assisted categorisation (LLM) | ✅ |
 
-**Phases 0–9 and 11 complete; Phase 10's backup half is done.** 960 tests. Deployment is the
+**Phases 0–9 and 11 complete; Phase 10's backup half is done.** 961 tests. Deployment is the
 only substantial thing left from the original plan, and `docs/RUNNING.md` already describes the
 setup worth having (Tailscale, real certificates, nothing exposed to the internet) — but see
 "Recommended next task" below, which is not that.
@@ -84,8 +84,13 @@ the rail's dead vertical space filled with a live clock and tick marks — all s
 **It reached the other eight screens on 4 October 2026.** Page blocks rise in order (`.stagger-in`
 with an inline `--i`); list rows follow their block one by one (`.stagger-rows` on the list, which
 numbers its own rows); bars grow (`.bar-grow`, `.bar-rise`), goal dials sweep to their percentage,
-and the simulator's lines draw in. The other three designs still have no motion — see "Recommended
-next task" below.
+and the simulator's lines draw in.
+
+**The other three designs got their own motion on 5 October 2026**, on the same hooks, in section F
+of `globals.css`. Field inks in place (opacity and a fading blur, no movement) and its bars wick
+slowly along. Raw drops blocks in hard and linear with no fade, fills bars in visible steps, and
+shoves a pressed button 2px. Command repaints blocks top to bottom, types rows out left to right and
+fills bars like a progress meter. `AnimatedAmount`'s count-up stays noir's alone.
 
 ---
 
@@ -163,7 +168,7 @@ where something lives.
 | `app/import/page.tsx` | Statement upload, one-by-one candidate triage, receipt photo |
 | `app/data/page.tsx` | Exports, JSON backup, restore, backup staleness status |
 | `app/layout.tsx` | Root layout: fonts (`lib/fonts.ts`), `DesignProvider`, `<html>`/`<body>` |
-| `app/globals.css` | Every design token (see below), `.card`/`.form-control`/`.font-display`, and Vault Noir's motion classes (`.stagger-in`, `.stagger-rows`, `.bar-grow`, `.chart-draw`, ...) |
+| `app/globals.css` | Every design token (see below), `.card`/`.form-control`/`.font-display`, and the motion hooks (`.stagger-in`, `.stagger-rows`, `.bar-grow`, `.chart-draw`, ...): noir's in section E, the other three designs' in F |
 | `app/manifest.ts` | PWA installability — why receipt capture can reach for a camera |
 
 **Components** (`components/`):
@@ -303,14 +308,11 @@ degrade to a no-op (old-style suggester/reader without one, a failed call, `Null
 caution, never a new dependency. `ImportInbox.tsx` surfaces a disagreement as a warning line on
 the row itself, not behind "Source row".
 
-**Recommended next task, set by the user 2 September 2026.** The visual design system's motion
-pass has now landed, but only for Vault Noir, and only on the Dashboard and Budgets screens — see
-"A motion layer landed" above for exactly what exists. What's left of the original three-part ask:
+**Recommended next task, set by the user 2 September 2026.** The motion pass is done for all four
+designs on all ten screens — see "A motion layer landed" above for exactly what exists. What's left
+of the original three-part ask:
 
-1. ~~**Motion.**~~ Done for Vault Noir on all ten screens. Not yet done: any motion at all for
-   Field Ledger, Raw Ledger or Command Ledger — each of those three needs its
-   *own* motion language (Field's should feel like ink drying, not noir's slow brass fades reused
-   with different colours), not noir's rules re-scoped to a different `[data-design]` selector.
+1. ~~**Motion.**~~ Done: each design has its own motion language on every screen.
 2. **Variance.** Still only the dashboard and budgets screens show each design's distinct visual
    language (Field Ledger's hairline rules and no card backgrounds; Raw Ledger's hard shadows and
    coloured card fills; Command Ledger's bento-style density). The other eight screens inherit
@@ -556,7 +558,8 @@ These are bugs already found and fixed. They will come back if the reasoning is 
   on `transform: none` and `filter: blur(0)`, so every staggered card on the dashboard and budgets
   screens silently lost its hover lift and shadow. Backwards holds the first keyframe through the
   delay, so nothing flashes, then hands the element back. `test_motion_rules.py` fails on a
-  forwards or both fill for any keyframe that moves a transform or filter.
+  forwards or both fill for any keyframe that moves a transform or filter, and on any animation
+  outside the `prefers-reduced-motion: no-preference` query.
 - **A stale browser console buffer looks exactly like a real bug.** Debugging the two traps above
   took far longer than it should have because `read_console_messages`-style tools return
   accumulated history, not just the latest reload's output — a fix that worked read as broken

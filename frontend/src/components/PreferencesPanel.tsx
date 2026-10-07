@@ -68,7 +68,7 @@ export function PreferencesPanel({
               : header
                 ? "absolute right-0 top-full z-40 mt-3"
                 : "mb-3"
-          } ${design === "noir" ? "modal-in" : ""}`}
+          } modal-in`}
           style={{
             background: "var(--surface-1)",
             boxShadow: "inset 0 0 0 var(--border-w) var(--hairline), var(--shadow-raised)",

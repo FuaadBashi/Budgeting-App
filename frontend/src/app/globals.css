@@ -926,6 +926,365 @@
   background-attachment: fixed;
 }
 
+/* ======================================================================
+   F. FIELD, RAW AND COMMAND -- each its own motion.
+
+   The hooks noir animates (.stagger-in, .stagger-rows, .bar-grow,
+   .bar-rise, .budget-meter-fill, .chart-draw, .chart-fade, .modal-in,
+   .backdrop-in), each given that design's own verb rather than noir's
+   rise re-scoped. Field inks in place, because paper does not move. Raw
+   drops things in hard and linear, because an ease is a soft edge. Command
+   renders the way a console prints. Noir's rules hold here too: every
+   entrance fills backwards, and all of it sits inside the reduced-motion
+   query, so with motion off everything simply renders in its end state.
+   ====================================================================== */
+@media (prefers-reduced-motion: no-preference) {
+  /* --- Field Ledger: ink drying. --------------------------------------- */
+  @keyframes field-ink {
+    from {
+      opacity: 0;
+      filter: blur(2px);
+    }
+    35% {
+      opacity: 0.75;
+      filter: blur(0.6px);
+    }
+    to {
+      opacity: 1;
+      filter: blur(0);
+    }
+  }
+
+  /* Soaks in fast, settles slowly. Opacity only: a ledger page is too long
+     to blur row by row. */
+  @keyframes field-soak {
+    from {
+      opacity: 0;
+    }
+    30% {
+      opacity: 0.7;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  @keyframes field-wick {
+    from {
+      clip-path: inset(0 100% 0 0);
+    }
+    to {
+      clip-path: inset(0);
+    }
+  }
+
+  @keyframes field-pool {
+    from {
+      clip-path: inset(100% 0 0 0);
+    }
+    to {
+      clip-path: inset(0);
+    }
+  }
+
+  @keyframes field-pen {
+    from {
+      stroke-dashoffset: 1;
+    }
+    to {
+      stroke-dashoffset: 0;
+    }
+  }
+
+  @keyframes field-dot {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: var(--target-opacity, 1);
+    }
+  }
+
+  /* A sheet laid on the desk: the one thing in Field that moves, and only
+     because a dialog genuinely arrives from somewhere. */
+  @keyframes field-sheet {
+    from {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  @keyframes field-dim {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  [data-design="field"] .stagger-in {
+    animation: field-ink 900ms ease backwards;
+    animation-delay: calc(var(--i, 0) * 90ms);
+  }
+
+  [data-design="field"] .stagger-rows > * {
+    animation: field-soak 700ms ease-out backwards;
+    animation-delay: calc(var(--i, 0) * 90ms + var(--n, 0) * 55ms);
+  }
+
+  /* Ink wicking along the fibre: slow to start and slow to stop, where
+     noir's bars decelerate from a standing start. */
+  [data-design="field"] .bar-grow,
+  [data-design="field"] .budget-meter-fill {
+    animation: field-wick 1.3s ease-in-out backwards;
+    animation-delay: calc(var(--i, 0) * 90ms + var(--n, 0) * 55ms + 250ms);
+  }
+
+  [data-design="field"] .bar-rise {
+    animation: field-pool 1.1s ease-in-out backwards;
+    animation-delay: calc(var(--i, 0) * 90ms + var(--n, 0) * 55ms + 250ms);
+  }
+
+  /* A pen ruling the line at an even pace. */
+  [data-design="field"] .chart-draw {
+    stroke-dasharray: 1;
+    animation: field-pen 1.6s ease-in-out backwards;
+  }
+
+  [data-design="field"] .chart-fade {
+    animation: field-dot 600ms ease-out backwards;
+    animation-delay: 1.4s;
+  }
+
+  [data-design="field"] .modal-in {
+    animation: field-sheet 260ms ease-out;
+  }
+
+  [data-design="field"] .backdrop-in {
+    animation: field-dim 260ms ease-out;
+  }
+
+  /* --- Raw Ledger: dropped in hard. ------------------------------------ */
+  /* No fade: a thing is there or it is not. It appears off its mark and
+     lands on it. */
+  @keyframes raw-drop {
+    0% {
+      opacity: 0;
+    }
+    1% {
+      opacity: 1;
+      transform: translate(-8px, -8px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  @keyframes raw-row {
+    0% {
+      opacity: 0;
+    }
+    1% {
+      opacity: 1;
+      transform: translateX(-6px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  @keyframes raw-bar {
+    from {
+      clip-path: inset(0 100% 0 0);
+    }
+    to {
+      clip-path: inset(0);
+    }
+  }
+
+  @keyframes raw-column {
+    from {
+      transform: scaleY(0);
+    }
+    to {
+      transform: none;
+    }
+  }
+
+  @keyframes raw-pen {
+    from {
+      stroke-dashoffset: 1;
+    }
+    to {
+      stroke-dashoffset: 0;
+    }
+  }
+
+  @keyframes raw-pop {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: var(--target-opacity, 1);
+    }
+  }
+
+  @keyframes raw-slam {
+    from {
+      transform: translate(-12px, -12px);
+    }
+    to {
+      transform: none;
+    }
+  }
+
+  [data-design="raw"] .stagger-in {
+    animation: raw-drop 160ms linear backwards;
+    animation-delay: calc(var(--i, 0) * 60ms);
+  }
+
+  [data-design="raw"] .stagger-rows > * {
+    animation: raw-row 120ms linear backwards;
+    animation-delay: calc(var(--i, 0) * 60ms + var(--n, 0) * 35ms);
+  }
+
+  /* Bars and lines advance in visible steps, like a mechanical counter. */
+  [data-design="raw"] .bar-grow,
+  [data-design="raw"] .budget-meter-fill {
+    animation: raw-bar 480ms steps(8, end) backwards;
+    animation-delay: calc(var(--i, 0) * 60ms + var(--n, 0) * 35ms + 160ms);
+  }
+
+  [data-design="raw"] .bar-rise {
+    transform-box: fill-box;
+    transform-origin: 50% 100%;
+    animation: raw-column 360ms steps(6, end) backwards;
+    animation-delay: calc(var(--i, 0) * 60ms + var(--n, 0) * 35ms + 160ms);
+  }
+
+  [data-design="raw"] .chart-draw {
+    stroke-dasharray: 1;
+    animation: raw-pen 800ms steps(12, end) backwards;
+  }
+
+  /* Markers stay hidden until the line is done, then appear at once. */
+  [data-design="raw"] .chart-fade {
+    animation: raw-pop 1ms steps(1, end) backwards;
+    animation-delay: 800ms;
+  }
+
+  [data-design="raw"] .modal-in {
+    animation: raw-slam 120ms linear;
+  }
+
+  /* --- Command Ledger: printed like console output. --------------------- */
+  /* Fast throughout: a console does not perform. */
+  @keyframes console-render {
+    from {
+      clip-path: inset(0 0 100% 0);
+    }
+    to {
+      clip-path: inset(0);
+    }
+  }
+
+  @keyframes console-print {
+    from {
+      clip-path: inset(0 100% 0 0);
+    }
+    to {
+      clip-path: inset(0);
+    }
+  }
+
+  @keyframes console-column {
+    from {
+      clip-path: inset(100% 0 0 0);
+    }
+    to {
+      clip-path: inset(0);
+    }
+  }
+
+  @keyframes console-plot {
+    from {
+      stroke-dashoffset: 1;
+    }
+    to {
+      stroke-dashoffset: 0;
+    }
+  }
+
+  /* Two blinks, then on, like a cursor finding its place. */
+  @keyframes console-blink {
+    0%, 30% {
+      opacity: 0;
+    }
+    31%, 55% {
+      opacity: var(--target-opacity, 1);
+    }
+    56%, 75% {
+      opacity: 0;
+    }
+    76%, 100% {
+      opacity: var(--target-opacity, 1);
+    }
+  }
+
+  /* A block draws top to bottom, the way a terminal repaints. */
+  [data-design="console"] .stagger-in {
+    animation: console-render 220ms linear backwards;
+    animation-delay: calc(var(--i, 0) * 50ms);
+  }
+
+  /* A row types out left to right, a few characters a step. */
+  [data-design="console"] .stagger-rows > * {
+    animation: console-print 180ms steps(12, end) backwards;
+    animation-delay: calc(var(--i, 0) * 50ms + var(--n, 0) * 28ms);
+  }
+
+  /* A progress meter: twenty even ticks, no easing. */
+  [data-design="console"] .bar-grow,
+  [data-design="console"] .budget-meter-fill {
+    animation: console-print 600ms steps(20, end) backwards;
+    animation-delay: calc(var(--i, 0) * 50ms + var(--n, 0) * 28ms + 120ms);
+  }
+
+  [data-design="console"] .bar-rise {
+    animation: console-column 300ms steps(8, end) backwards;
+    animation-delay: calc(var(--i, 0) * 50ms + var(--n, 0) * 28ms + 120ms);
+  }
+
+  /* A plotter: constant speed, start to end. */
+  [data-design="console"] .chart-draw {
+    stroke-dasharray: 1;
+    animation: console-plot 900ms linear backwards;
+  }
+
+  [data-design="console"] .chart-fade {
+    animation: console-blink 360ms linear backwards;
+    animation-delay: 900ms;
+  }
+
+  [data-design="console"] .modal-in {
+    animation: console-render 140ms linear;
+  }
+}
+
+/* Raw's press: a hard 2px shove the way its offset shadows fall. Instant,
+   with no transition, so it is a state rather than motion, and stays with
+   motion off too. */
+[data-design="raw"] button:not(:disabled):active {
+  transform: translate(2px, 2px);
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);

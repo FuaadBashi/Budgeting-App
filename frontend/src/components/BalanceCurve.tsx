@@ -5,7 +5,6 @@ import { HelpText } from "@/components/ExplainMode";
 import { useId, type CSSProperties } from "react";
 import { PICK_PROMPT, useChartSelection } from "@/lib/chartSelection";
 import type { CalendarDay } from "@/lib/api";
-import { useDesign } from "@/lib/design";
 import { formatMinor, formatSignedMinor } from "@/lib/money";
 
 const W = 720;
@@ -66,8 +65,6 @@ export function BalanceCurve({
   const clipId = useId();
   const selection = useChartSelection(days.length);
   const hover = selection.index;
-  const { design } = useDesign();
-  const animated = design === "noir";
 
   if (days.length < 2) return null;
 
@@ -140,8 +137,8 @@ export function BalanceCurve({
             buffer paints the whole strip red whenever the floor sits under the
             buffer, regardless of where the curve actually goes. */}
         <polygon
-          className={animated ? "chart-fade" : undefined}
-          style={animated ? ({ "--target-opacity": 0.18 } as CSSProperties) : undefined}
+          className="chart-fade"
+          style={{ "--target-opacity": 0.18 } as CSSProperties}
           points={`${padLeft},${bufferY} ${line} ${padLeft + PLOT_W},${bufferY}`}
           fill="var(--status-critical)"
           opacity="0.18"
@@ -210,8 +207,8 @@ export function BalanceCurve({
         ))}
 
         <polyline
-          className={animated ? "chart-draw" : undefined}
-          pathLength={animated ? 1 : undefined}
+          className="chart-draw"
+          pathLength={1}
           points={line}
           fill="none"
           stroke="var(--accent)"
@@ -223,7 +220,7 @@ export function BalanceCurve({
         {eventDays.map(({ d, i }) => (
           <circle
             key={d.day}
-            className={animated ? "chart-fade" : undefined}
+            className="chart-fade"
             cx={x(i)}
             cy={y(d.closing_balance_minor)}
             r="3.5"
@@ -235,7 +232,7 @@ export function BalanceCurve({
 
         {troughDate && (
           <circle
-            className={animated ? "chart-fade" : undefined}
+            className="chart-fade"
             cx={x(days.findIndex((d) => d.day === troughDate))}
             cy={y(days.find((d) => d.day === troughDate)!.closing_balance_minor)}
             r="5"
