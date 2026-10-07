@@ -12,7 +12,12 @@
 /* Secondary, not muted: on the current item's accent-soft highlight the muted
    ink measured 4.32:1 in Vault Noir light. */
 .vault-nav-index { margin-left: auto; font: 9px var(--font-ibm-plex-mono), monospace; color: var(--text-secondary); }
-[data-design="noir"] .finance-shell { background-image: radial-gradient(ellipse at 85% 0%, var(--accent-soft), transparent 45%); }
+/* The shell paints the page plane here, not inline: an inline `background`
+   shorthand reset background-image, so no design could layer anything over it,
+   and noir's glow below and its ambient grid on body never showed. Noir's
+   shell is see-through, so that body ambient reaches the page. */
+.finance-shell { background-color: var(--page-plane); }
+[data-design="noir"] .finance-shell { background-color: transparent; background-image: radial-gradient(ellipse at 85% 0%, var(--accent-soft), transparent 45%); }
 [data-design="noir"] .finance-shell main { max-width: 1280px; }
 [data-design="noir"] .finance-shell main > header { padding-bottom: 24px; border-bottom: 1px solid var(--hairline-strong); }
 [data-design="noir"] .finance-shell main > header h1 { font-size: clamp(30px, 3.5vw, 48px); line-height: 1.12; letter-spacing: -.045em; font-weight: 500; }
@@ -1283,6 +1288,112 @@
    motion off too. */
 [data-design="raw"] button:not(:disabled):active {
   transform: translate(2px, 2px);
+}
+
+/* ======================================================================
+   G. FIELD, RAW AND COMMAND -- their own structure.
+
+   Until now these three differed from noir only in their tokens: the same
+   boxes in different colours. Each now has a structural language of its
+   own on every screen, written against the classes every screen already
+   shares (.card, .section-label, main > header, .stat-tile), so no screen
+   needed its own rules. Anything that moves layout waits for lg: mobile is
+   one layout across all four designs (see DECISIONS).
+   ====================================================================== */
+
+/* --- Field Ledger: a ruled paper page. A card is not a box on the paper; it
+   is a section of it, so it loses its fill and frame and keeps a rule. */
+[data-design="field"] .card {
+  background: transparent;
+  box-shadow: none;
+  border-top: 1px solid var(--hairline-strong);
+  border-radius: 0;
+}
+[data-design="field"] .finance-shell main > header {
+  padding-bottom: 14px;
+  border-bottom: 3px double var(--hairline-strong);
+}
+[data-design="field"] .finance-shell main > header h1 {
+  font-style: italic;
+}
+[data-design="field"] .finance-shell main :is(h2, h3).section-label {
+  color: var(--accent-text);
+}
+
+/* --- Raw Ledger: loud and labelled. Section heads are inverted tags, the page
+   head is underlined like a poster, and the figures sit on coloured fills.
+   The fills are a light tint of the surface, so every ink keeps its contrast. */
+[data-design="raw"] .finance-shell main :is(h2, h3).section-label,
+[data-design="raw"] .finance-shell main .stat-tile > .section-label {
+  display: inline-block;
+  padding: 3px 8px;
+  background: var(--text-primary);
+  color: var(--surface-1);
+}
+[data-design="raw"] .finance-shell main > header {
+  padding-bottom: 12px;
+  border-bottom: 4px solid var(--text-primary);
+}
+[data-design="raw"] .finance-shell main .stat-tile {
+  background: color-mix(in oklab, var(--accent) 9%, var(--surface-1));
+}
+[data-design="raw"] .finance-shell main :nth-child(even) > .stat-tile {
+  background: color-mix(in oklab, var(--series-2) 8%, var(--surface-1));
+}
+
+/* --- Command Ledger: a console. Section heads read as comments, the page
+   title as a prompt, and every panel is a crisp 1px frame packed tighter.
+   The marks are generated content with empty alt text, so a screen reader
+   reads the heading, not the punctuation. */
+[data-design="console"] .finance-shell main :is(h2, h3).section-label::before {
+  content: "// " / "";
+  color: var(--accent-text);
+}
+[data-design="console"] .finance-shell main > header h1::before {
+  content: "> " / "";
+  color: var(--accent-text);
+}
+[data-design="console"] .finance-shell main > header {
+  padding-bottom: 12px;
+  border-bottom: 1px dashed var(--hairline-strong);
+}
+[data-design="console"] .card {
+  box-shadow: inset 0 0 0 1px var(--hairline-strong);
+}
+[data-design="console"] .card.p-5 {
+  padding: 14px 16px;
+}
+
+/* --- The space around the content, in each design's own idiom. */
+@media (min-width: 1024px) {
+  /* Field: the content is a sheet of ledger paper on the desk, with the red
+     double margin rule a ledger page has, instead of a narrow column
+     floating in an empty plane. */
+  [data-design="field"] .finance-shell main {
+    max-width: 1120px;
+    margin-block: 32px;
+    padding: 48px 56px 64px 104px;
+    background:
+      linear-gradient(90deg,
+        transparent 71px,
+        color-mix(in oklab, var(--accent) 45%, transparent) 71px 72px,
+        transparent 72px 75px,
+        color-mix(in oklab, var(--accent) 45%, transparent) 75px 76px,
+        transparent 76px),
+      var(--surface-1);
+    box-shadow: 0 0 0 1px var(--hairline), var(--shadow-raised);
+  }
+
+  /* Raw: the gutters are hatched, and the content is a slab with a hard
+     frame standing on them. */
+  [data-design="raw"] .finance-shell {
+    background-image: repeating-linear-gradient(-45deg, var(--gridline) 0 2px, transparent 2px 14px);
+  }
+  [data-design="raw"] .finance-shell main {
+    margin-block: 32px;
+    background: var(--page-plane);
+    box-shadow: 0 0 0 var(--border-w) var(--text-primary), var(--shadow-raised);
+  }
 }
 
 @theme inline {

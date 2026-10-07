@@ -6,7 +6,9 @@ import { useEffect, useMemo, useState, type CSSProperties, type FormEvent, type 
 import { PreferencesPanel } from "@/components/PreferencesPanel";
 import { ExplainToolbar, useExplainMode } from "@/components/ExplainMode";
 import { TransactionEntry } from "@/components/TransactionEntry";
+import { getNetWorth, getSafeToSpend } from "@/lib/api";
 import { useDesign, type Design } from "@/lib/design";
+import { formatMinor, type Minor } from "@/lib/money";
 
 /**
  * Navigation chrome. Plan section 11.1.
@@ -57,7 +59,7 @@ const CONTENT_OFFSET: Record<Design, string> = {
   noir: "lg:pl-60",
   field: "",
   raw: "lg:pb-28",
-  console: "lg:pl-14",
+  console: "lg:pl-14 2xl:pr-64",
 };
 
 export function AppShell({ children }: { children: ReactNode }) {
@@ -66,9 +68,10 @@ export function AppShell({ children }: { children: ReactNode }) {
   const explain = useExplainMode();
 
   return (
-    <div className="finance-shell min-h-dvh" data-explain={explain ? "on" : "off"} data-screen={pathname.split('/')[1] || 'dashboard'} style={{ background: "var(--page-plane)" }}>
+    <div className="finance-shell min-h-dvh" data-explain={explain ? "on" : "off"} data-screen={pathname.split('/')[1] || 'dashboard'}>
       {design === "noir" && <VaultNav />}
       {design === "console" && <RailNav design="console" />}
+      {design === "console" && <ConsoleStatus />}
       {design === "raw" && <DockNav />}
 
       <div className={`${CONTENT_OFFSET[design]} lg:flex lg:min-h-dvh lg:flex-col`}>
@@ -292,6 +295,73 @@ function RailAmbient() {
       <Ticks />
       {rule}
     </div>
+  );
+}
+
+/* ============================================================
+   D. Command Ledger -- a status panel in the wide screen's spare
+   column. A console's answer to dead space is a live readout, not
+   ornament: the time to the second, where you are, and the two
+   figures you would otherwise open the dashboard for. They are read
+   from the same endpoints the dashboard uses, on each page change.
+   ============================================================ */
+
+function ConsoleStatus() {
+  const pathname = usePathname();
+  const [time, setTime] = useState<string | null>(null);
+  const [figures, setFigures] = useState<{ safe: Minor; worth: Minor } | null>(null);
+
+  useEffect(() => {
+    function tick() {
+      setTime(new Date().toLocaleTimeString("en-GB"));
+    }
+    tick();
+    const id = window.setInterval(tick, 1000);
+    return () => window.clearInterval(id);
+  }, []);
+
+  useEffect(() => {
+    let live = true;
+    Promise.all([getSafeToSpend(), getNetWorth()])
+      .then(([sts, worth]) => {
+        if (live) setFigures({ safe: sts.safe_to_spend_minor, worth: worth.net_worth_minor });
+      })
+      // A readout that cannot be read shows nothing rather than a stale or made-up figure.
+      .catch(() => {
+        if (live) setFigures(null);
+      });
+    return () => {
+      live = false;
+    };
+  }, [pathname]);
+
+  const row = (label: string, value: ReactNode) => (
+    <div className="flex items-baseline justify-between gap-3">
+      <dt style={{ color: "var(--text-muted)" }}>{label}</dt>
+      <dd className="tnum" style={{ color: "var(--text-primary)" }}>{value}</dd>
+    </div>
+  );
+
+  return (
+    <aside
+      aria-label="Status"
+      className="fixed inset-y-0 right-0 hidden w-64 flex-col gap-5 border-l px-5 py-6 text-xs 2xl:flex"
+      style={{ borderColor: "var(--hairline)", background: "var(--page-plane)" }}
+    >
+      <p className="section-label" style={{ color: "var(--accent-text)" }}>
+        {"// status"}
+      </p>
+      <dl className="space-y-2">
+        {row("time", time ?? "--:--:--")}
+        {row("route", `~${pathname === "/" ? "/dashboard" : pathname}`)}
+      </dl>
+      {figures && (
+        <dl className="space-y-2 border-t pt-4" style={{ borderColor: "var(--hairline)" }}>
+          {row("safe to spend", formatMinor(figures.safe))}
+          {row("net worth", formatMinor(figures.worth))}
+        </dl>
+      )}
+    </aside>
   );
 }
 

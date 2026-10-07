@@ -168,14 +168,14 @@ where something lives.
 | `app/import/page.tsx` | Statement upload, one-by-one candidate triage, receipt photo |
 | `app/data/page.tsx` | Exports, JSON backup, restore, backup staleness status |
 | `app/layout.tsx` | Root layout: fonts (`lib/fonts.ts`), `DesignProvider`, `<html>`/`<body>`; serves the default `data-design`/`data-theme` so motion starts at first paint |
-| `app/globals.css` | Every design token (see below), `.card`/`.form-control`/`.font-display`, and the motion hooks (`.stagger-in`, `.stagger-rows`, `.bar-grow`, `.chart-draw`, ...): noir's in section E, the other three designs' in F |
+| `app/globals.css` | Every design token (see below), `.card`/`.form-control`/`.font-display`, the motion hooks (`.stagger-in`, `.stagger-rows`, `.bar-grow`, `.chart-draw`, ...): noir's in section E, the other three designs' in F, and Field, Raw and Command's structure and dead space in G |
 | `app/manifest.ts` | PWA installability — why receipt capture can reach for a camera |
 
 **Components** (`components/`):
 
 | File | Responsibility |
 |---|---|
-| `AppShell.tsx` | Nav chrome for all four designs (rail / masthead / dock / rail+command-bar); mobile top bar and bottom tabs (four plus a More sheet), identical across designs |
+| `AppShell.tsx` | Nav chrome for all four designs (rail / masthead / dock / rail+command-bar), plus Command Ledger's `ConsoleStatus` panel at 2xl; mobile top bar and bottom tabs (four plus a More sheet), identical across designs |
 | `PreferencesPanel.tsx` | The gear-icon control: pick a design, pick System/Light/Dark. `placement="rail"` puts it inside the icon rail |
 | `AccountManager.tsx` | Account and category lists and creation forms, with per-account rename, archive and restore and per-category rename (one shared `RenameForm`); the one line where "amount owed" becomes a negative balance |
 | `BufferSetting.tsx` | The protected cash buffer card on Accounts (`#buffer`); the dashboard's "none set" note links to it |
@@ -313,15 +313,15 @@ designs on all ten screens — see "A motion layer landed" above for exactly wha
 of the original three-part ask:
 
 1. ~~**Motion.**~~ Done: each design has its own motion language on every screen.
-2. **Variance.** Still only the dashboard and budgets screens show each design's distinct visual
-   language (Field Ledger's hairline rules and no card backgrounds; Raw Ledger's hard shadows and
-   coloured card fills; Command Ledger's bento-style density). The other eight screens inherit
-   colour and type correctly but look visually flatter than the pitch promised.
-3. **Dead space.** Vault Noir's rail dead-space is filled (tick marks, live clock, an ambient page
-   glow/grid). The equivalent for the other three designs' own chrome — and for screens beyond
-   Dashboard/Budgets in any design — is still open. Each design's own idiom should decide what
-   fills it, per the original brief: Command Ledger might want a live secondary panel; Field
-   Ledger might want a wider single column with real margins rather than a centred narrow one.
+2. ~~**Variance.**~~ Done, on every screen, in section G of `globals.css`. Field Ledger is a
+   ruled page: cards lose their fill and frame and keep a rule, with an italic title under a
+   double rule. Raw Ledger labels sections with inverted tags, underlines the title like a
+   poster and puts its figures on tinted fills. Command Ledger reads as a console: `//`
+   section comments, a `>` prompt title and tight 1px-framed panels.
+3. ~~**Dead space.**~~ Done, at lg and up. Field sets the content on a sheet of ledger paper with
+   a red double margin rule; Raw stands a hard-framed slab on hatched gutters; Command gets a
+   live status panel at 2xl (`ConsoleStatus`: the time, the route, safe to spend and net worth).
+   Vault Noir's ambient glow and grid now actually show; see the trap on inline backgrounds.
 
 Everything else the earlier handoffs listed as outstanding has landed: `rollover_reset` has a
 control on the budgets screen, transactions can be edited for their non-monetary fields, receipt
@@ -538,6 +538,11 @@ These are bugs already found and fixed. They will come back if the reasoning is 
   optional one precisely so a caller cannot forget it: a `None` default would downgrade the
   merchant warning to `not_evaluated` silently, which is the quietest possible way to lose a
   warning. `budget_routes` fetches once for the whole chain, never once per period.
+- **Never give `.finance-shell` an inline `background`.** The shorthand resets
+  `background-image`, and an inline value beats every stylesheet rule, so no design could layer
+  anything over the page: Vault Noir's glow and ambient grid were written, documented as done,
+  and never painted. The page colour lives in CSS now, and noir's shell is transparent so the
+  body's ambient shows through.
 - **Motion scoped to a design needs that design on the first paint.** `<html>` used to be served
   with no `data-design`, so every motion rule started matching only when `DesignProvider`'s effect
   set it after hydration: each cold load painted the page whole, then snapped it back to hidden to

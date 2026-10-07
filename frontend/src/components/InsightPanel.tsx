@@ -132,8 +132,11 @@ function InsightCard({ insight, narration }: { insight: Insight; narration?: str
   return (
     <li className="card p-4" style={{ boxShadow: `inset 0 0 0 1px ${s.colour}` }}>
       <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-        <span className="text-sm" style={{ color: s.colour }}>
-          <span aria-hidden>{s.mark}</span> {s.word}
+        {/* The status colour marks the symbol and the frame, not the word:
+            --status-serious is a fill, and as text it fell to 3.4:1 in
+            Command Ledger light. The word in ink reads in every palette. */}
+        <span className="text-sm" style={{ color: "var(--text-primary)" }}>
+          <span aria-hidden style={{ color: s.colour }}>{s.mark}</span> {s.word}
         </span>
         <span className="min-w-0 flex-1 text-sm" style={{ color: "var(--text-primary)" }}>
           {insight.title}
