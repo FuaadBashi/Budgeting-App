@@ -62,8 +62,8 @@ Enable Banking. Synced rows are candidates in the existing Import inbox, never d
 writes. Budgets has a zero-based month-plan view, and Calendar has a month grid alongside the
 existing balance curve.
 
-**A UX audit's ten top findings were worked through on 24 September 2026** (nine fixed, one — adopt a
-single design — left as a decision; see §4). The ones worth knowing: the phone bar is four tabs
+**A UX audit's ten top findings were worked through on 24 September 2026** (nine fixed; the tenth,
+adopt a single design, was declined on 7 October — see `docs/DECISIONS.md`, *Four designs stay*). The ones worth knowing: the phone bar is four tabs
 plus More, the gear lives inside the rail in Vault Noir and Command Ledger, every chart answers
 tap and arrow keys as well as hover, and text on the accent colour comes from `--on-accent`.
 
@@ -404,9 +404,9 @@ each with named tests.
 7. ~~**The protected cash buffer has no API or UI.**~~ Done. `GET`/`PUT /api/protected-buffer`
    sets it from a card on Accounts, and the dashboard's "none set" note links there. Every engine
    reads it through `domain/profile.protected_buffer`, so the card shows what each one subtracts.
-8. **Open from the 24 September audit.** Item 10, adopt one design with light and dark and put the
-   effort into flows, remains a product decision and cuts against the four-direction motion work
-   above. The concrete product gaps are closed: opt-in UK Open Banking sync, categorisation rules,
+8. ~~**Open from the 24 September audit.**~~ Decided 7 October: item 10, adopt one design, is
+   declined and all four stay (`docs/DECISIONS.md`, *Four designs stay*). The concrete product
+   gaps are closed: opt-in UK Open Banking sync, categorisation rules,
    split entry, a month-grid calendar and a zero-based "assign every pound" view now ship. The
    eight palettes also have automated AA contrast coverage.
 
