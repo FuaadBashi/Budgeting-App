@@ -167,7 +167,7 @@ where something lives.
 | `app/simulator/page.tsx` | Scenario list/create/compare, the projection chart |
 | `app/import/page.tsx` | Statement upload, one-by-one candidate triage, receipt photo |
 | `app/data/page.tsx` | Exports, JSON backup, restore, backup staleness status |
-| `app/layout.tsx` | Root layout: fonts (`lib/fonts.ts`), `DesignProvider`, `<html>`/`<body>` |
+| `app/layout.tsx` | Root layout: fonts (`lib/fonts.ts`), `DesignProvider`, `<html>`/`<body>`; serves the default `data-design`/`data-theme` so motion starts at first paint |
 | `app/globals.css` | Every design token (see below), `.card`/`.form-control`/`.font-display`, and the motion hooks (`.stagger-in`, `.stagger-rows`, `.bar-grow`, `.chart-draw`, ...): noir's in section E, the other three designs' in F |
 | `app/manifest.ts` | PWA installability — why receipt capture can reach for a camera |
 
@@ -536,6 +536,14 @@ These are bugs already found and fixed. They will come back if the reasoning is 
   optional one precisely so a caller cannot forget it: a `None` default would downgrade the
   merchant warning to `not_evaluated` silently, which is the quietest possible way to lose a
   warning. `budget_routes` fetches once for the whole chain, never once per period.
+- **Motion scoped to a design needs that design on the first paint.** `<html>` used to be served
+  with no `data-design`, so every motion rule started matching only when `DesignProvider`'s effect
+  set it after hydration: each cold load painted the page whole, then snapped it back to hidden to
+  play the entrance. The layout now serves the defaults, which paint exactly as the bare `:root`
+  fallback does; `tests/design-defaults.test.mjs` keeps them equal to `DEFAULT_DESIGN` and
+  `DEFAULT_APPEARANCE`. A stored non-default design still swaps in after hydration, as the next
+  entry explains. Related: every page renders its own `AppShell`, so anything in it remounts on
+  each navigation; the Command rail's entrance is limited to once a visit for that reason.
 - **Never read `localStorage` inside a `useState` initializer.** `DesignProvider` first tried it,
   and it threw a hard hydration failure on every returning visitor whose stored design differed
   from the default. The initializer runs on the client's very first render, before hydration
