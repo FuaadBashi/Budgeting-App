@@ -437,9 +437,10 @@ a year later. Field Ledger's masthead paid for the extra link: its title now sho
 only at `xl`. Estimated from label widths rather than measured, eleven links plus
 the title need about 1,270px at the old spacing, more than a 1024px screen has.
 
-**The audit's tenth finding, adopt one design, is not decided here.** It asks for
+**The audit's tenth finding, adopt one design, was not decided here.** It asks for
 four directions to become one, which reverses the entry above and the motion work
-set as the next task on 2 September. That is the owner's call, not a fix.
+set as the next task on 2 September. That was the owner's call, not a fix; see
+*Four designs stay*, below.
 
 ## A category rename relabels history. Decided 7 October 2026
 
@@ -462,3 +463,24 @@ who really has reclassified their spending creates a new category and files new 
 **Sibling names still clash case-insensitively**, as on create, except against the category's
 own name, so "groceries" can become "Groceries".
 
+## Four designs stay. Decided 7 October 2026
+
+**The audit's tenth finding is declined: all four designs stay.** It asked for one design in
+light and dark, with the effort going into flows instead. Both halves of that argument have
+since moved. The flows it was protecting have shipped: the product gaps HANDOFF listed are
+closed, category renaming last, and the one left standing, no deletion, is deliberate. And the
+three directions it saw as recolours of Vault Noir no longer are. Each has its own structure,
+motion and use of the space around the content on all ten screens (sections F and G of
+`globals.css`).
+
+**What four designs cost, and what keeps that down.** Screens style against shared token names
+and classes and never ask which design is active, so a new screen gets all four without extra
+work. What could break quietly is under test: AA contrast for all eight palettes and the ink on
+the accent (`test_design_tokens.py`), every animation inside the reduced-motion query and no fill
+that outlives its animation (`test_motion_rules.py`), and the server's first-paint design
+matching the client's (`design-defaults.test.mjs`). Mobile is one layout, so phone bugs are not
+multiplied by four.
+
+**What would reopen it.** A screen that needs its own rules in each design, or a kind of bug
+that keeps turning up in one design and not the others. Either would mean the shared tokens no
+longer carry the differences between designs, which is what this decision rests on.

@@ -39,9 +39,9 @@ Ledger, Raw Ledger, Command Ledger), each with its own light and dark palette, p
 gear icon on every screen. See `docs/HANDOFF.md`'s Frontend section for where it lives and
 `docs/DECISIONS.md` for why it's built the way it is.
 
-Left to do: the deploy itself and the product decision about whether to retain four visual
-directions or consolidate them. `docs/RUNNING.md` describes the deploy setup worth having —
-Tailscale, real certificates, nothing exposed to the internet.
+Left to do: the deploy itself. `docs/RUNNING.md` describes the deploy setup worth having —
+Tailscale, real certificates, nothing exposed to the internet. All four visual directions stay;
+`docs/DECISIONS.md` says why.
 
 ## Screenshots
 
