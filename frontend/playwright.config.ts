@@ -35,7 +35,9 @@ export default defineConfig({
   forbidOnly: Boolean(process.env.CI),
   retries: 0,
   timeout: 120_000,
-  reporter: process.env.CI ? [["list"], ["html", { open: "never" }]] : "list",
+  // In CI, `github` turns each failure, and a server that would not start,
+  // into an annotation on the run, readable without opening the log.
+  reporter: process.env.CI ? [["github"], ["list"], ["html", { open: "never" }]] : "list",
   use: {
     baseURL: `http://localhost:${WEB_PORT}`,
     ...devices["Desktop Chrome"],
