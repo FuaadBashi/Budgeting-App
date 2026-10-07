@@ -133,7 +133,14 @@ cd backend && ./.venv/bin/python -m pytest -q
 ```
 
 CI runs the same suite on every push against Postgres 17, and lints, tests and builds the
-frontend.
+frontend. A third job runs the browser tests in `frontend/e2e/` against the whole stack: a
+transaction entered in the form and a category rename followed through to the figures, hover and
+reduced motion, AA contrast on every screen in all four designs, and no sideways scroll on a
+phone. Locally, against a throwaway database:
+
+```bash
+cd frontend && E2E_DATABASE_URL=postgresql+psycopg://localhost/budgetapp_e2e npm run e2e
+```
 
 The suite is organised around the rulebook's named invariants rather than around modules — `L1`
 postings sum to zero, `N1` transfers preserve net worth, `S1` no double-counting of fulfilled
