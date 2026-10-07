@@ -6,6 +6,7 @@ import {
   createAccount,
   createCategory,
   openAccounts,
+  renameCategory,
   updateAccount,
   type Account,
   type Category,
@@ -241,43 +242,19 @@ function AccountRow({ account, showBalance }: { account: Account; showBalance: b
     }
   }
 
-  function onRename(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const name = String(new FormData(event.currentTarget).get("name") || "").trim();
-    if (!name) {
-      setError("An account needs a name.");
-      return;
-    }
-    if (name === account.name) {
-      setRenaming(false);
-      return;
-    }
-    void save({ name });
-  }
-
   return (
     <li className="space-y-1 text-sm">
       {renaming ? (
-        <form onSubmit={onRename} className="flex flex-wrap items-center gap-2">
-          <input
-            name="name"
-            defaultValue={account.name}
-            required
-            maxLength={120}
-            autoFocus
-            aria-label={`New name for ${account.name}`}
-            className="form-control min-w-0 flex-1"
-          />
-          <PrimaryButton busy={busy}>Save</PrimaryButton>
-          <SecondaryButton
-            onClick={() => {
-              setRenaming(false);
-              setError(null);
-            }}
-          >
-            Cancel
-          </SecondaryButton>
-        </form>
+        <RenameForm
+          current={account.name}
+          busy={busy}
+          onSave={(name) => void save({ name })}
+          onCancel={() => {
+            setRenaming(false);
+            setError(null);
+          }}
+          onError={setError}
+        />
       ) : (
         <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
           <span
@@ -324,6 +301,127 @@ function AccountRow({ account, showBalance }: { account: Account; showBalance: b
                 Restore
               </SecondaryButton>
             )}
+          </div>
+        </div>
+      )}
+      {error && <ErrorLine>{error}</ErrorLine>}
+    </li>
+  );
+}
+
+/**
+ * The inline rename shared by account and category rows. Blank names are
+ * caught here; everything else the API decides, and its reason is shown.
+ */
+function RenameForm({
+  current,
+  busy,
+  onSave,
+  onCancel,
+  onError,
+  note,
+}: {
+  current: string;
+  busy: boolean;
+  onSave: (name: string) => void;
+  onCancel: () => void;
+  onError: (message: string) => void;
+  note?: string;
+}) {
+  function onSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const name = String(new FormData(event.currentTarget).get("name") || "").trim();
+    if (!name) {
+      onError("A name needs at least one visible character.");
+      return;
+    }
+    if (name === current) {
+      onCancel();
+      return;
+    }
+    onSave(name);
+  }
+
+  return (
+    <form onSubmit={onSubmit} className="space-y-1.5">
+      <div className="flex flex-wrap items-center gap-2">
+        <input
+          name="name"
+          defaultValue={current}
+          required
+          maxLength={120}
+          autoFocus
+          aria-label={`New name for ${current}`}
+          className="form-control min-w-0 flex-1"
+        />
+        <PrimaryButton busy={busy}>Save</PrimaryButton>
+        <SecondaryButton onClick={onCancel}>Cancel</SecondaryButton>
+      </div>
+      {note && (
+        <p className="text-xs" style={{ color: "var(--text-muted)" }}>
+          {note}
+        </p>
+      )}
+    </form>
+  );
+}
+
+/**
+ * One category with its rename control. A rename relabels history too: past
+ * budgets and reports read the name through the category's id, so the note says
+ * so before the person saves. Nature and parent are not offered -- the API
+ * refuses both, because either would change what a closed period spent.
+ */
+function CategoryRow({ category, label }: { category: Category; label: string }) {
+  const router = useRouter();
+  const [renaming, setRenaming] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function save(name: string) {
+    setBusy(true);
+    setError(null);
+    try {
+      await renameCategory(category.id, name);
+      setRenaming(false);
+      router.refresh();
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "Could not save.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <li className="space-y-1 px-4 py-2.5">
+      {renaming ? (
+        <RenameForm
+          current={category.name}
+          busy={busy}
+          onSave={(name) => void save(name)}
+          onCancel={() => {
+            setRenaming(false);
+            setError(null);
+          }}
+          onError={setError}
+          note="Past budgets and reports will show the new name too. The money in it does not move."
+        />
+      ) : (
+        <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
+          <span className="min-w-0 flex-1" style={{ color: "var(--text-secondary)", overflowWrap: "anywhere" }}>
+            {label}
+          </span>
+          <div className="flex shrink-0 items-center gap-2">
+            <span className="text-xs capitalize" style={{ color: "var(--text-muted)" }}>
+              {category.nature}
+            </span>
+            <SecondaryButton
+              onClick={() => setRenaming(true)}
+              disabled={busy}
+              aria-label={`Rename ${category.name}`}
+            >
+              Rename
+            </SecondaryButton>
           </div>
         </div>
       )}
@@ -428,12 +526,7 @@ export function CategoriesSection({ categories }: { categories: Category[] }) {
       ) : (
         <ul className="card divide-y text-sm" style={{ borderColor: "var(--gridline)" }}>
           {labelled.map(({ category, label }) => (
-            <li key={category.id} className="flex justify-between gap-3 px-4 py-2.5">
-              <span style={{ color: "var(--text-secondary)", overflowWrap: "anywhere" }}>{label}</span>
-              <span className="shrink-0 text-xs capitalize" style={{ color: "var(--text-muted)" }}>
-                {category.nature}
-              </span>
-            </li>
+            <CategoryRow key={category.id} category={category} label={label} />
           ))}
         </ul>
       )}

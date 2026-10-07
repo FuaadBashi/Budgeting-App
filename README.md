@@ -32,7 +32,7 @@ warnings, save toward goals, see upcoming cash flow against a protected buffer, 
 and receipts through a candidate inbox, sync UK bank feeds into that same review flow, automate
 categorisation with deterministic rules, split entries across categories, assign expected income
 in a zero-based month plan, run what-if scenarios, and read an explanation of how every figure was
-reached. 961 tests.
+reached. 974 tests.
 
 A frontend visual design system also ships four switchable directions (Vault Noir, Field
 Ledger, Raw Ledger, Command Ledger), each with its own light and dark palette, picked from the
@@ -47,8 +47,9 @@ Tailscale, real certificates, nothing exposed to the internet.
 
 All figures are the fictional household `scripts/seed_demo.py` creates.
 
-**Four designs, one set of components.** Each is a token set in `globals.css` with its own light
-and dark palette, switched from the gear icon.
+**Four designs, one set of components.** Each is a token set in `globals.css`, with its own light
+and dark palette and its own structure: ruled paper, a brutalist slab, a console with a live status
+panel. Switched from the gear icon.
 
 | Vault Noir: quiet, dark, expensive | Field Ledger: a financial paper |
 |---|---|

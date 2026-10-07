@@ -440,3 +440,25 @@ the title need about 1,270px at the old spacing, more than a 1024px screen has.
 **The audit's tenth finding, adopt one design, is not decided here.** It asks for
 four directions to become one, which reverses the entry above and the motion work
 set as the next task on 2 September. That is the owner's call, not a fix.
+
+## A category rename relabels history. Decided 7 October 2026
+
+**Renaming a category changes its name everywhere, past periods included.** Nothing stores a
+category's name except its own row: postings, budgets, rules, import suggestions and the
+merchant cache all hold the id, and every breakdown reads the name when it is computed. The
+alternative, versioned names that show last March under the name it had then, was rejected. It
+would be the one stored, dated label in a ledger that otherwise derives everything on read, and
+it protects nothing: a rename does not move a penny, so last March's figures are identical under
+either name. The screen says so before saving. Exports already downloaded keep the old name,
+which is correct for a file.
+
+**Nature and parent stay fixed, and saying so is the API's job.** Nature decides what the
+discretionary budget and the 50/30/20 split count, and the parent decides what a parent-scoped
+budget counts. Changing either would rewrite what a closed period spent, the thing *Deletion and
+retention* exists to prevent. `PATCH /api/categories/{id}` therefore refuses both with that
+reason, not the generic unknown-field error, so a client that sends them learns why. A person
+who really has reclassified their spending creates a new category and files new entries there.
+
+**Sibling names still clash case-insensitively**, as on create, except against the category's
+own name, so "groceries" can become "Groceries".
+

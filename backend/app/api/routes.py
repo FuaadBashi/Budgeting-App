@@ -21,6 +21,7 @@ from app.api.schemas import (
     AccountIn,
     BudgetImpactOut,
     AccountOut,
+    CategoryEditIn,
     CategoryIn,
     CategoryOut,
     NetWorthOut,
@@ -229,34 +230,58 @@ def create_category(
     make one, so every transaction was uncategorised and every scoped budget
     measured nothing.
 
-    A sibling with the same name is refused, case-insensitively: categories are
-    never deleted, and a double-submitted "Groceries" would split one budget's
-    spending across two categories that look identical in every picker.
+    A sibling with the same name is refused; see `_refuse_sibling_named`.
     """
     name = payload.name.strip()
     if not name:
         raise HTTPException(status_code=422, detail="a category needs a name")
     if payload.parent_id is not None and session.get(Category, payload.parent_id) is None:
         raise HTTPException(status_code=422, detail=f"unknown parent category {payload.parent_id}")
-
-    same_parent = (
-        Category.parent_id.is_(None)
-        if payload.parent_id is None
-        else Category.parent_id == payload.parent_id
-    )
-    existing = session.scalar(
-        select(Category).where(same_parent, func.lower(Category.name) == name.lower())
-    )
-    if existing is not None:
-        raise HTTPException(
-            status_code=422,
-            detail=f"there is already a category called {existing.name!r} here",
-        )
+    _refuse_sibling_named(session, payload.parent_id, name)
 
     category = Category(name=name, parent_id=payload.parent_id, nature=payload.nature)
     session.add(category)
     session.commit()
     return category
+
+
+@router.patch("/categories/{category_id}", response_model=CategoryOut)
+def rename_category(
+    category_id: uuid.UUID, payload: CategoryEditIn, session: Session = Depends(get_session)
+) -> Category:
+    """Rename a category. See `CategoryEditIn` for why only the name can change.
+
+    Postings, budgets, rules, import suggestions and the merchant cache all hold
+    the id, never the name, so this one row is the whole change.
+    """
+    category = session.get(Category, category_id)
+    if category is None:
+        raise HTTPException(status_code=404, detail="category not found")
+    _refuse_sibling_named(session, category.parent_id, payload.name, exclude=category.id)
+    category.name = payload.name
+    session.commit()
+    return category
+
+
+def _refuse_sibling_named(
+    session: Session, parent_id: uuid.UUID | None, name: str, exclude: uuid.UUID | None = None
+) -> None:
+    """Refuse a name a sibling already has, case-insensitively.
+
+    Categories are never deleted, so a second "Groceries" would split one
+    budget's spending across two categories that look identical in every picker.
+    ``exclude`` lets a category change only the case of its own name.
+    """
+    same_parent = Category.parent_id.is_(None) if parent_id is None else Category.parent_id == parent_id
+    clash = select(Category).where(same_parent, func.lower(Category.name) == name.lower())
+    if exclude is not None:
+        clash = clash.where(Category.id != exclude)
+    existing = session.scalar(clash)
+    if existing is not None:
+        raise HTTPException(
+            status_code=422,
+            detail=f"there is already a category called {existing.name!r} here",
+        )
 
 
 # --------------------------------------------------------------------------
