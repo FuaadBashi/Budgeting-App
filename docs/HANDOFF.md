@@ -41,10 +41,10 @@ presentation change; financial calculations and API contracts are unchanged.
 | 10 | Polish, backups, hosting | ◐ backups and exposure hardening done; the deploy itself is yours |
 | 11 | Assisted categorisation (LLM) | ✅ |
 
-**Phases 0–9 and 11 complete; Phase 10's backup half is done.** 974 tests. Deployment is the
-only substantial thing left from the original plan, and `docs/RUNNING.md` already describes the
-setup worth having (Tailscale, real certificates, nothing exposed to the internet) — but see
-"Recommended next task" below, which is not that.
+**Phases 0–9 and 11 complete; Phase 10's backup half is done.** 975 backend tests and 25
+browser tests. Deployment is the only substantial thing left from the original plan, and
+`docs/RUNNING.md` already describes the setup worth having (Tailscale, real certificates, nothing
+exposed to the internet) — but see "Recommended next task" below, which is not that.
 
 Frontend has eleven screens — dashboard, transactions, accounts, analytics, insights, budgets,
 calendar, goals, simulator, import and data — and every nav item is live. Accounts, categories,

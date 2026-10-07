@@ -32,7 +32,7 @@ warnings, save toward goals, see upcoming cash flow against a protected buffer, 
 and receipts through a candidate inbox, sync UK bank feeds into that same review flow, automate
 categorisation with deterministic rules, split entries across categories, assign expected income
 in a zero-based month plan, run what-if scenarios, and read an explanation of how every figure was
-reached. 974 tests.
+reached. 975 backend tests and 25 browser tests.
 
 A frontend visual design system also ships four switchable directions (Vault Noir, Field
 Ledger, Raw Ledger, Command Ledger), each with its own light and dark palette, picked from the
