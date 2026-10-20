@@ -1,0 +1,41 @@
+# One-command demo: Postgres, the API and the app, seeded with demo data.
+#
+#   docker compose up --build      then open http://localhost:3000
+#
+# Login is off (no password is set) and the data is fake and reseeded on every
+# start, so ports bind to localhost only. Not a deployment: see deploy/README.md.
+services:
+  db:
+    image: postgres:17
+    environment:
+      POSTGRES_USER: budget
+      POSTGRES_PASSWORD: demo-only-password
+      POSTGRES_DB: budgetapp
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "budget", "-d", "budgetapp"]
+      interval: 2s
+      retries: 30
+
+  api:
+    build: ./backend
+    environment:
+      DATABASE_URL: postgresql+psycopg://budget:demo-only-password@db:5432/budgetapp
+      # Backups would land inside a throwaway container.
+      BACKUP_ENABLED: "false"
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:8000:8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health')"]
+      interval: 3s
+      retries: 40
+
+  web:
+    build: ./frontend
+    depends_on:
+      api:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:3000:3000"

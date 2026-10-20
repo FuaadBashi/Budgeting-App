@@ -1,0 +1,7 @@
+# .env holds the real password hash and session secret; it must never enter an image.
+.env
+.venv
+backups
+__pycache__
+*.egg-info
+tests
