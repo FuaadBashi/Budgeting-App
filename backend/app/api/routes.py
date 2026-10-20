@@ -322,7 +322,30 @@ def _to_out(txn: Transaction, kinds: dict) -> TransactionOut:
 def create_transaction(
     payload: TransactionIn, session: Session = Depends(get_session)
 ) -> TransactionOut:
+    if payload.reimburses_id:
+        original = session.scalar(select(Transaction).where(
+            Transaction.id == payload.reimburses_id
+        ).with_for_update())
+        if original is None or original.status != TransactionStatus.POSTED:
+            raise HTTPException(status_code=422, detail="Choose a posted original purchase")
+        expense_ids = set(session.scalars(select(Account.id).where(Account.kind == AccountKind.EXPENSE)))
+        purchased = sum(p.amount for p in original.postings if p.account_id in expense_ids)
+        refunded = session.scalar(select(func.coalesce(func.sum(Posting.amount), 0)).join(Transaction).where(
+            Transaction.reimburses_id == original.id,
+            Transaction.status != TransactionStatus.VOIDED,
+            Posting.account_id.in_(expense_ids),
+        ))
+        amount = -sum(from_minor(p.amount_minor) for p in payload.postings if p.account_id in expense_ids)
+        original_expenses = {p.account_id for p in original.postings if p.account_id in expense_ids}
+        # A repayment from someone else (employer, friend) touches no expense
+        # account; only a refund that reverses the expense needs these limits.
+        is_refund = any(p.account_id in expense_ids for p in payload.postings)
+        if is_refund and (purchased <= 0 or amount <= 0 or amount > purchased + refunded
+            or any(p.account_id not in original_expenses or p.amount_minor > 0
+                   for p in payload.postings if p.account_id in expense_ids)):
+            raise HTTPException(status_code=422, detail="Refund exceeds the unrefunded purchase or uses a different expense account")
     txn = Transaction(
+        status=TransactionStatus(payload.status),
         booking_date=payload.booking_date,
         occurred_at=payload.occurred_at
         or datetime.combine(
@@ -449,6 +472,30 @@ def list_transactions(
         .limit(min(200, max(1, limit)))
     )
     return [_to_out(t, kinds) for t in rows]
+
+
+@router.post("/transactions/{transaction_id}/settle", response_model=TransactionOut)
+def settle_transaction(transaction_id: uuid.UUID, booking_date: date,
+                       session: Session = Depends(get_session)) -> TransactionOut:
+    """Post a pending entry in place; repeated settlement never adds another payment."""
+    txn = session.scalar(select(Transaction).where(Transaction.id == transaction_id).with_for_update())
+    if txn is None:
+        raise HTTPException(status_code=404, detail="transaction not found")
+    if txn.status == TransactionStatus.VOIDED:
+        raise HTTPException(status_code=422, detail="A voided entry cannot be settled")
+    if txn.status == TransactionStatus.CANDIDATE:
+        if txn.reimburses_id:
+            original = session.get(Transaction, txn.reimburses_id)
+            if original is None or original.status != TransactionStatus.POSTED:
+                raise HTTPException(status_code=422, detail="Original purchase is no longer posted")
+        txn.status = TransactionStatus.POSTED
+        txn.booking_date = booking_date
+        try:
+            session.commit()
+        except DatabaseError as exc:
+            session.rollback()
+            raise HTTPException(status_code=422, detail=str(exc.orig)) from exc
+    return _to_out(txn, {a.id: a.kind for a in session.scalars(select(Account))})
 
 
 @router.post("/transactions/{transaction_id}/void", response_model=TransactionOut)

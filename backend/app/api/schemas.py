@@ -11,7 +11,7 @@ import uuid
 from datetime import date, datetime
 from decimal import ROUND_HALF_EVEN, Decimal
 
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
@@ -169,6 +169,7 @@ class TransactionIn(BaseModel):
     the classification is derived from the accounts the legs touch."""
 
     booking_date: date
+    status: Literal["posted", "candidate"] = "posted"
     occurred_at: datetime | None = None
     description: str = ""
     merchant: str | None = None
@@ -176,6 +177,8 @@ class TransactionIn(BaseModel):
     #: Links this transaction to the expense it repays, so budget spend can be
     #: netted down. Without it a reimbursed expense still consumes the budget.
     reimburses_id: uuid.UUID | None = None
+
+
 
     @field_validator("postings")
     @classmethod

@@ -76,6 +76,8 @@ export interface PostingInput {
 }
 
 export interface TransactionInput {
+  status?: "posted" | "candidate";
+  reimburses_id?: string | null;
   booking_date: string;
   description: string;
   merchant?: string | null;
@@ -629,6 +631,9 @@ export const applyRule = (id: string, transactionIds: string[]) =>
   post<{ applied: number }>(`/rules/${id}/apply`, { transaction_ids: transactionIds });
 export const createTransaction = (input: TransactionInput) =>
   post<Transaction>("/transactions", input);
+
+export const settleTransaction = (id: string, date: string) =>
+  post<Transaction>(`/transactions/${id}/settle?booking_date=${encodeURIComponent(date)}`, {});
 export const getBudgets = () => get<BudgetPeriod[]>("/dashboard/budgets");
 export const getRecovery = () => get<Recovery>("/dashboard/recovery");
 export const getNetWorth = () => get<NetWorth>("/dashboard/net-worth");

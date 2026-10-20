@@ -1,6 +1,7 @@
 "use client";
 
 import { FieldHelp } from "@/components/ExplainMode";
+import { QuickEntry } from "@/components/QuickEntry";
 
 import Link from "next/link";
 import { useEffect, useMemo, useState, useSyncExternalStore, type FormEvent, type ReactNode } from "react";
@@ -76,6 +77,7 @@ export function TransactionEntry({
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
+  const [advanced, setAdvanced] = useState(false);
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(false);
@@ -100,7 +102,7 @@ export function TransactionEntry({
   async function openForm() {
     setError(null);
     setOpen(true);
-    if (accounts.length > 0 || loading) return;
+    if (loading) return;
     setLoading(true);
     try {
       const [nextAccounts, nextCategories] = await Promise.all([
@@ -315,7 +317,7 @@ export function TransactionEntry({
                   Record transaction
                 </h2>
                 <p className="mt-1 text-sm" style={{ color: "var(--text-muted)" }}>
-                  The app creates the balancing ledger legs for you.
+                  Choose from the lists, check the preview, then save.
                 </p>
               </div>
               <button
@@ -330,7 +332,8 @@ export function TransactionEntry({
               </button>
             </div>
 
-            <div className="mt-5 grid grid-cols-4 gap-1 rounded-[var(--radius-sm)] p-1" style={{ background: "var(--surface-2)" }}>
+            <button type="button" className="mt-3 text-sm underline" onClick={() => setAdvanced(!advanced)}>{advanced ? "Simple entry" : "Advanced / split payment"}</button>
+            {advanced && <div className="mt-5 grid grid-cols-4 gap-1 rounded-[var(--radius-sm)] p-1" style={{ background: "var(--surface-2)" }}>
               {(["expense", "income", "transfer", "refund"] as EntryKind[]).map((entryKind) => (
                 <button
                   key={entryKind}
@@ -347,12 +350,14 @@ export function TransactionEntry({
                   {entryKind}
                 </button>
               ))}
-            </div>
+            </div>}
 
             {loading ? (
               <p className="py-10 text-center text-sm" style={{ color: "var(--text-muted)" }}>
                 Loading accounts…
               </p>
+            ) : !advanced ? (
+              error ? <p role="alert">{error} <button type="button" className="underline" onClick={() => void openForm()}>Retry</button></p> : <QuickEntry accounts={accounts} categories={categories} done={recorded} />
             ) : (
               <form className="mt-5 space-y-4" onSubmit={submit}>
                 <div className="grid gap-4 sm:grid-cols-2">
