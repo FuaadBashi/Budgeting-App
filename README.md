@@ -84,6 +84,16 @@ transaction touches, never stored. Money is `NUMERIC(19,4)` in the database, `De
 and integer pence across the API. Every displayed figure is computed from postings on read;
 nothing derived is stored as editable data.
 
+## Try it with Docker
+
+```
+docker compose up --build
+```
+
+Brings up Postgres, the API and the app with demo data at
+http://localhost:3000. Login is off and the data is reseeded on every start, so it
+binds to localhost only. For real use, follow Setup below.
+
 ## Setup
 
 Requires Python 3.12+, PostgreSQL 17 and Node 20+. Run each command block below from the repository root in a fresh terminal, or return there between blocks; `cd backend` and `cd frontend` are sibling paths.

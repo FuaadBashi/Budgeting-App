@@ -14,7 +14,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["pytest>=8.0", "httpx>=0.27", "pyjwt[crypto]>=2.8"]
+dev = ["pytest>=8.0", "httpx>=0.27", "pyjwt[crypto]>=2.8", "hypothesis>=6.100"]
 #: Only needed to actually call Claude. Without it, and without an API key,
 #: every suggestion path is a no-op (A3).
 llm = ["anthropic>=0.40"]
