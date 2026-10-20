@@ -29,6 +29,8 @@ test("a spend recorded in the form comes off the account it was paid from", asyn
   await page.goto("/");
   await page.getByRole("button", { name: /^Add$/ }).filter({ visible: true }).first().click();
   const form = page.getByRole("dialog");
+  // Simple entry is the default; this flow names both ledger accounts, which only the full form does.
+  await form.getByRole("button", { name: "Advanced / split payment" }).click();
   await form.locator('input[name="amount"]').fill("18.40");
   await form.locator('select[name="source_account_id"]').selectOption({ label: "Current" });
   await form.locator('select[name="destination_account_id"]').selectOption({ label: "Eating Out" });
