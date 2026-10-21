@@ -1,4 +1,4 @@
-import { expect, test, type APIRequestContext } from "@playwright/test";
+import { expect, test, type APIRequestContext, type Locator, type Page } from "@playwright/test";
 import { formatMinor } from "../src/lib/money";
 
 /**
@@ -92,6 +92,73 @@ test("a pending purchase leaves balances alone until it is marked paid", async (
   await form.getByRole("button", { name: "Mark paid / received" }).click();
   await expect(form).toBeHidden();
   expect(await balanceOf(request, "Current")).toBe(before - 1200);
+});
+
+async function openSimpleEntry(page: Page) {
+  await page.goto("/");
+  await page.getByRole("button", { name: /^Add$/ }).filter({ visible: true }).first().click();
+  return page.getByRole("dialog");
+}
+
+// Labels wrap their selects, so a label's text includes every option; the
+// accessible name does not.
+const field = (form: Locator, name: string) => form.getByRole("combobox", { name, exact: true });
+
+test("a transfer in simple entry moves money between accounts without changing the total", async ({ page, request }) => {
+  const current = await balanceOf(request, "Current");
+  const saved = await balanceOf(request, "Emergency Fund");
+
+  const form = await openSimpleEntry(page);
+  await field(form, "Transaction type").selectOption("transfer");
+  await form.getByLabel("Product / name").fill("Top up savings, recorded by simple entry");
+  await form.getByLabel("Amount (£)").fill("50.00");
+  await field(form, "Account / from").selectOption({ label: "Current" });
+  await field(form, "To account").selectOption({ label: "Emergency Fund" });
+  await expect(form.getByRole("status")).toContainText(`Emergency Fund: ${formatMinor(saved)} → ${formatMinor(saved + 5000)}`);
+  await form.getByRole("button", { name: "Save transaction" }).click();
+  await expect(form).toBeHidden();
+
+  expect(await balanceOf(request, "Current")).toBe(current - 5000);
+  expect(await balanceOf(request, "Emergency Fund")).toBe(saved + 5000);
+});
+
+test("a refund returns money once, and refunding more than is left is refused", async ({ page, request }) => {
+  const accounts: Named[] = await (await request.get("/api/accounts")).json();
+  const id = (name: string) => accounts.find((a) => a.name === name)!.id;
+  // Yesterday, so the purchase is in balances whatever the runner's timezone.
+  const yesterday = new Date(Date.now() - 86_400_000).toISOString().slice(0, 10);
+  const purchase = "Faulty kettle, bought for the refund test";
+  await request.post("/api/transactions", {
+    data: {
+      booking_date: yesterday,
+      description: purchase,
+      postings: [
+        { account_id: id("Current"), amount_minor: -3000 },
+        { account_id: id("Eating Out"), amount_minor: 3000 },
+      ],
+    },
+  });
+  const before = await balanceOf(request, "Current");
+
+  const refund = async (amount: string) => {
+    const form = await openSimpleEntry(page);
+    await field(form, "Transaction type").selectOption("refund");
+    await form.getByLabel("Product / name").fill(`Kettle refund ${amount}`);
+    await form.getByLabel("Amount (£)").fill(amount);
+    await field(form, "Receive into account").selectOption({ label: "Current" });
+    const original = field(form, "Original purchase");
+    await original.selectOption((await original.locator("option", { hasText: purchase }).getAttribute("value"))!);
+    await form.getByRole("button", { name: "Save transaction" }).click();
+    return form;
+  };
+
+  await expect(await refund("12.00")).toBeHidden();
+  expect(await balanceOf(request, "Current")).toBe(before + 1200);
+
+  // £18 is left to refund; the server must refuse £25 and the form must say so.
+  const form = await refund("25.00");
+  await expect(form.getByRole("alert")).toContainText("Refund exceeds");
+  expect(await balanceOf(request, "Current")).toBe(before + 1200);
 });
 
 test("renaming a category relabels its past spending in Analytics", async ({ page, request }) => {
