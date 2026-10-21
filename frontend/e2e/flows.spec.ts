@@ -161,6 +161,41 @@ test("a refund returns money once, and refunding more than is left is refused", 
   expect(await balanceOf(request, "Current")).toBe(before + 1200);
 });
 
+test("income in simple entry lands in the account it was paid into", async ({ page, request }) => {
+  const before = await balanceOf(request, "Current");
+
+  const form = await openSimpleEntry(page);
+  await field(form, "Transaction type").selectOption("income");
+  await form.getByLabel("Product / name").fill("Freelance invoice, recorded by simple entry");
+  await form.getByLabel("Amount (£)").fill("240.00");
+  await field(form, "Receive into account").selectOption({ label: "Current" });
+  await field(form, "Income source").selectOption({ label: "Salary" });
+  await expect(form.getByRole("status")).toContainText(`Current: ${formatMinor(before)} → ${formatMinor(before + 24000)}`);
+  await form.getByRole("button", { name: "Save transaction" }).click();
+  await expect(form).toBeHidden();
+
+  expect(await balanceOf(request, "Current")).toBe(before + 24000);
+});
+
+test("a debt repayment in simple entry reduces what is owed by exactly what was paid", async ({ page, request }) => {
+  // The seed has no debt, so the test brings its own: £500 owed, stored negative.
+  const card = "Store card for the repayment test";
+  await request.post("/api/accounts", { data: { name: card, kind: "liability", opening_balance_minor: -50000 } });
+  const current = await balanceOf(request, "Current");
+
+  const form = await openSimpleEntry(page);
+  await field(form, "Transaction type").selectOption("debt");
+  await form.getByLabel("Product / name").fill("Store card payment, recorded by simple entry");
+  await form.getByLabel("Amount (£)").fill("100.00");
+  await field(form, "Account / from").selectOption({ label: "Current" });
+  await field(form, "To account").selectOption({ label: card });
+  await form.getByRole("button", { name: "Save transaction" }).click();
+  await expect(form).toBeHidden();
+
+  expect(await balanceOf(request, "Current")).toBe(current - 10000);
+  expect(await balanceOf(request, card)).toBe(-40000);
+});
+
 test("renaming a category relabels its past spending in Analytics", async ({ page, request }) => {
   // Every seeded month, plus a margin either side for a runner whose date is
   // a day off the server's at a month boundary.
