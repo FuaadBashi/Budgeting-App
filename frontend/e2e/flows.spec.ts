@@ -84,7 +84,7 @@ test("a pending purchase leaves balances alone until it is marked paid", async (
   expect(await balanceOf(request, "Current")).toBe(before);
 
   form = await open();
-  await form.getByLabel("Action", { exact: true }).selectOption("settle");
+  await form.getByRole("combobox", { name: "Action", exact: true }).selectOption("settle");
   const pending = form.getByLabel("Pending entry");
   // Option labels carry the date and amount too, so pick by the row's own value.
   const option = pending.locator("option", { hasText: "Pending order, recorded by simple entry" });
