@@ -49,6 +49,51 @@ test("a spend recorded in the form comes off the account it was paid from", asyn
   await expect(page.getByText("Lunch, recorded by the browser test").first()).toBeVisible();
 });
 
+test("a purchase saved in simple entry comes off the account it was paid from", async ({ page, request }) => {
+  const before = await balanceOf(request, "Current");
+
+  await page.goto("/");
+  await page.getByRole("button", { name: /^Add$/ }).filter({ visible: true }).first().click();
+  const form = page.getByRole("dialog");
+  await form.getByLabel("Product / name").fill("Snacks, recorded by simple entry");
+  await form.getByLabel("Amount (£)").fill("7.25");
+  await form.getByLabel("Account / from").selectOption({ label: "Current" });
+  // The preview is the promise the form makes; the ledger must keep it.
+  await expect(form.getByRole("status")).toContainText(`Current: ${formatMinor(before)} → ${formatMinor(before - 725)}`);
+  await form.getByRole("button", { name: "Save transaction" }).click();
+  await expect(form).toBeHidden();
+
+  expect(await balanceOf(request, "Current")).toBe(before - 725);
+});
+
+test("a pending purchase leaves balances alone until it is marked paid", async ({ page, request }) => {
+  const before = await balanceOf(request, "Current");
+  const open = async () => {
+    await page.goto("/");
+    await page.getByRole("button", { name: /^Add$/ }).filter({ visible: true }).first().click();
+    return page.getByRole("dialog");
+  };
+
+  let form = await open();
+  await form.getByLabel("Product / name").fill("Pending order, recorded by simple entry");
+  await form.getByLabel("Amount (£)").fill("12.00");
+  await form.getByLabel("Account / from").selectOption({ label: "Current" });
+  await form.getByLabel("Status").selectOption("candidate");
+  await form.getByRole("button", { name: "Save transaction" }).click();
+  await expect(form).toBeHidden();
+  expect(await balanceOf(request, "Current")).toBe(before);
+
+  form = await open();
+  await form.getByLabel("Action").selectOption("settle");
+  const pending = form.getByLabel("Pending entry");
+  // Option labels carry the date and amount too, so pick by the row's own value.
+  const option = pending.locator("option", { hasText: "Pending order, recorded by simple entry" });
+  await pending.selectOption((await option.getAttribute("value"))!);
+  await form.getByRole("button", { name: "Mark paid / received" }).click();
+  await expect(form).toBeHidden();
+  expect(await balanceOf(request, "Current")).toBe(before - 1200);
+});
+
 test("renaming a category relabels its past spending in Analytics", async ({ page, request }) => {
   // Every seeded month, plus a margin either side for a runner whose date is
   // a day off the server's at a month boundary.
