@@ -15,7 +15,7 @@ from pathlib import Path
 
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import select
+from sqlalchemy import select, text
 
 from app.db import get_session
 from app.domain import backup, restore as restore_module
@@ -86,6 +86,9 @@ def test_an_amount_reads_as_stored_while_the_session_still_holds_the_object_that
 
     while_held = backup.build_payload(session)
     session.expire_all()
+    # A server outside UTC hands timestamps back in its own offset. LOCAL ends with
+    # this transaction, so the pooled connection is unchanged for later tests.
+    session.execute(text("SET LOCAL TIME ZONE 'Asia/Dubai'"))
     reloaded = backup.build_payload(session)
 
     assert while_held == reloaded
