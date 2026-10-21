@@ -67,6 +67,11 @@ def _json_value(value):
     """Encode database-native values without passing through a float."""
     if isinstance(value, Decimal):
         return str(value)
+    # Postgres returns timestamptz in the server's TimeZone, while an object this
+    # session built keeps its own offset; UTC makes both print the same instant
+    # the same way, so two backups of unchanged data are identical.
+    if isinstance(value, datetime) and value.tzinfo is not None:
+        return value.astimezone(timezone.utc).isoformat()
     if isinstance(value, (date, datetime)):
         return value.isoformat()
     if isinstance(value, uuid.UUID):
@@ -207,7 +212,7 @@ def build_payload(session: Session) -> dict:
             {
                 "id": str(txn.id),
                 "booking_date": txn.booking_date.isoformat(),
-                "occurred_at": txn.occurred_at.isoformat(),
+                "occurred_at": _json_value(txn.occurred_at),
                 "description": txn.description,
                 "merchant": txn.merchant,
                 "status": txn.status.value,
